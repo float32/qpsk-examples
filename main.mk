@@ -12,4 +12,4 @@ SUBMAKEFILES := test.mk
 .PHONY: cog
 cog:
 	@cog -r inc/carrier_rejection_filter.h
-	@cog -r inc/demodulator.h
+	@cog -r inc/util.h
