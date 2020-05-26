@@ -26,7 +26,7 @@
 #include <zlib.h>
 #include "inc/crc32.h"
 
-namespace qpsk::test
+namespace qpsk::test::crc32
 {
 
 constexpr uint32_t kTestLength = 1e6;
@@ -49,7 +49,7 @@ TEST(CRC32Test, RandomData)
     uint32_t expected;
     uint32_t actual;
 
-    expected = crc32(0, data_, kTestLength);
+    expected = ::crc32(0, data_, kTestLength);
 
     crc.Seed(0);
     actual = crc.Process(data_, kTestLength);
@@ -60,7 +60,7 @@ TEST(CRC32Test, RandomData)
     actual = crc.Process(data_, kTestLength);
     ASSERT_NE(expected, actual);
 
-    expected = crc32(0, data_, kTestLength);
+    expected = ::crc32(0, data_, kTestLength);
     ASSERT_EQ(expected, actual);
 }
 

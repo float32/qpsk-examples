@@ -25,7 +25,7 @@
 #include <gtest/gtest.h>
 #include "inc/util.h"
 
-namespace qpsk::test
+namespace qpsk::test::util
 {
 
 TEST(UtilTest, Sine)

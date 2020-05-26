@@ -25,7 +25,7 @@
 #include <gtest/gtest.h>
 #include "inc/one_pole.h"
 
-namespace qpsk::test
+namespace qpsk::test::one_pole
 {
 
 TEST(OnePoleTest, LowpassDecayTime)

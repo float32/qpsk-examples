@@ -26,7 +26,7 @@
 #include <zlib.h>
 #include "inc/packet.h"
 
-namespace qpsk::test
+namespace qpsk::test::packet
 {
 
 constexpr uint32_t kPacketSize = 256;

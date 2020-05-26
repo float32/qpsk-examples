@@ -25,7 +25,7 @@
 #include <gtest/gtest.h>
 #include "inc/fifo.h"
 
-namespace qpsk::test
+namespace qpsk::test::fifo
 {
 
 constexpr uint32_t kPaint = 0xDEADBEEF;

@@ -24,7 +24,7 @@
 #include <cmath>
 #include "inc/window.h"
 
-namespace qpsk::test
+namespace qpsk::test::window
 {
 
 template <typename T>

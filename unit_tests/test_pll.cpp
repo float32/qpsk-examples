@@ -24,7 +24,7 @@
 #include <cmath>
 #include "inc/pll.h"
 
-namespace qpsk::test
+namespace qpsk::test::pll
 {
 
 constexpr double kTestDuration = 5;

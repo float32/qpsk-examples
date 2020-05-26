@@ -28,7 +28,7 @@
 #include <zlib.h>
 #include "decoder.h"
 
-namespace qpsk::test
+namespace qpsk::test::decoder
 {
 
 constexpr uint32_t kDecoderSampleRate = 48077;

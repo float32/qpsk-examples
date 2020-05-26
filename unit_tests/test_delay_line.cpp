@@ -25,7 +25,7 @@
 #include <gtest/gtest.h>
 #include "inc/delay_line.h"
 
-namespace qpsk::test
+namespace qpsk::test::delay_line
 {
 
 constexpr uint32_t kPaint = 0xDEADBEEF;
