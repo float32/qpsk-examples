@@ -16,3 +16,4 @@ tests: $(TARGET_DIR)/$(TARGET)
 .PHONY: check
 check: $(TARGET_DIR)/$(TARGET)
 	$<
+	python3 unit_tests/test_encoder.py
