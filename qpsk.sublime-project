@@ -1,0 +1,45 @@
+{
+    "folders":
+    [
+        {
+            "path": ".",
+            "folder_exclude_patterns":
+            [
+                "build",
+                "boilermake",
+            ],
+            "file_exclude_patterns":
+            [
+                "*.sublime-project",
+                ".gitmodules",
+            ],
+        }
+    ],
+
+    "settings":
+    {
+        "trim_trailing_white_space_on_save": true,
+    },
+
+    "build_systems":
+    [
+        {
+            "name": "make",
+            "shell_cmd": "make -j\\$(nproc) tests",
+            "file_regex": "^\\s*([^:]+):(\\d+):(\\d+):\\s*(.+)$",
+            "syntax": "Packages/Makefile/Make Output.sublime-syntax",
+            "working_dir": "$project_path",
+            "variants":
+            [
+                {
+                    "name": "clean",
+                    "shell_cmd": "make mostlyclean",
+                },
+                {
+                    "name": "run",
+                    "shell_cmd": "make -j\\$(nproc) check",
+                },
+            ],
+        },
+    ]
+}
