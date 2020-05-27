@@ -341,7 +341,7 @@ TEST(DecoderTest, Decode)
     }
 
     // begin decoding
-    Error error = qpsk_.Receive(ReceivePage, signal_length);
+    Error error = qpsk_.Receive(ReceivePage, nullptr, signal_length);
 
     if (error != ERROR_NONE)
     {
