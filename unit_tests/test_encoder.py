@@ -28,6 +28,8 @@ import tempfile
 import subprocess
 import random
 import zlib
+import io
+import codecs
 
 class TestQPSKEncoder(unittest.TestCase):
 
@@ -36,47 +38,70 @@ class TestQPSKEncoder(unittest.TestCase):
     @classmethod
     def setUp(cls):
         random.seed(420)
-        cls._data = bytes([random.randint(0, 0xFF) for i in range(10000)])
+        cls._bin_data = bytes([random.randint(0, 0xFF) for i in range(10000)])
+        ihex = IntelHex()
+        ihex.frombytes(cls._bin_data)
+        hex_data = io.StringIO()
+        ihex.write_hex_file(hex_data, write_start_addr=False)
+        cls._hex_data = codecs.encode(hex_data.getvalue(), encoding='ascii')
+        cls._args = ['python3', 'encoder.py',
+            '-s', '48000',
+            '-c', '6000',
+            '-f', '1024',
+            '-p', '256',
+            '-w', '0.05']
 
     def test_bin(self):
         with tempfile.NamedTemporaryFile() as binfile:
-            binfile.write(self._data)
-
+            binfile.write(self._bin_data)
             with tempfile.NamedTemporaryFile() as wavfile:
-                result = subprocess.run(['python3', 'encoder.py',
-                    '-t', 'bin',
-                    '-s', '48000',
-                    '-c', '6000',
-                    '-f', '1024',
-                    '-p', '256',
-                    '-w', '0.05',
-                    '-i', binfile.name,
-                    '-o', wavfile.name])
+                result = subprocess.run(self._args +
+                    ['-t', 'bin', '-i', binfile.name, '-o', wavfile.name],
+                    capture_output=True)
+                try:
+                    result.check_returncode()
+                except:
+                    print(result.stderr.decode('utf-8'))
                 wav_data = wavfile.read()
                 crc = zlib.crc32(wav_data)
-
                 self.assertEqual(self.GOLDEN_CRC32, crc)
 
     def test_hex(self):
         with tempfile.NamedTemporaryFile() as hexfile:
-            ihex = IntelHex()
-            ihex.frombytes(self._data)
-            ihex.write_hex_file(hexfile.name, False)
-
+            hexfile.write(self._hex_data)
             with tempfile.NamedTemporaryFile() as wavfile:
-                result = subprocess.run(['python3', 'encoder.py',
-                    '-t', 'hex',
-                    '-s', '48000',
-                    '-c', '6000',
-                    '-f', '1024',
-                    '-p', '256',
-                    '-w', '0.05',
-                    '-i', hexfile.name,
-                    '-o', wavfile.name])
+                result = subprocess.run(self._args +
+                    ['-t', 'hex', '-i', hexfile.name, '-o', wavfile.name],
+                    capture_output=True)
+                try:
+                    result.check_returncode()
+                except:
+                    print(result.stderr.decode('utf-8'))
                 wav_data = wavfile.read()
                 crc = zlib.crc32(wav_data)
-
                 self.assertEqual(self.GOLDEN_CRC32, crc)
+
+    def test_bin_stdio(self):
+        result = subprocess.run(self._args + ['-t', 'bin'],
+            capture_output=True, input=self._bin_data)
+        try:
+            result.check_returncode()
+        except:
+            print(result.stderr.decode('utf-8'))
+        wav_data = result.stdout
+        crc = zlib.crc32(wav_data)
+        self.assertEqual(self.GOLDEN_CRC32, crc)
+
+    def test_hex_stdio(self):
+        result = subprocess.run(self._args + ['-t', 'hex'],
+            capture_output=True, input=self._hex_data)
+        try:
+            result.check_returncode()
+        except:
+            print(result.stderr.decode('utf-8'))
+        wav_data = result.stdout
+        crc = zlib.crc32(wav_data)
+        self.assertEqual(self.GOLDEN_CRC32, crc)
 
 if __name__ == '__main__':
     unittest.main()
