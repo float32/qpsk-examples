@@ -23,9 +23,9 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include <vector>
-#include <deque>
 #include <random>
-#include <zlib.h>
+#include <string>
+#include <fstream>
 #include "decoder.h"
 
 namespace qpsk::test::decoder
@@ -40,35 +40,13 @@ constexpr uint32_t kSymbolRate = 6000;
 constexpr uint32_t kPageSize = 1024;
 constexpr uint32_t kPacketSize = 256;
 constexpr uint32_t kCRCSeed = 0;
-
 constexpr uint32_t kSamplesPerSymbol = kEncoderSampleRate / kSymbolRate;
-constexpr uint32_t kPacketsPerPage = kPageSize / kPacketSize;
-constexpr uint32_t kDataLength = kPageSize * 10 + 1;
+constexpr uint8_t kFillByte = 0xFF;
 
-const uint8_t kPacketPreamble[] =
-{
-    0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x99, 0x99, 0x99, 0x99,
-    0xCC, 0xCC, 0xCC, 0xCC,
-};
+constexpr uint32_t kFifoCapacity = 1 << 24;
 
-constexpr double kFlashWriteBlankDuration = 0.05;
-
-constexpr double kSymbolsPerPacket =
-    (sizeof(kPacketPreamble) + kPacketSize + 4) * 4;
-constexpr double kSamplesPerPacket = kSymbolsPerPacket * kSamplesPerSymbol;
-constexpr double kPacketDuration = kSamplesPerPacket / kEncoderSampleRate;
-constexpr double kPageDuration =
-    kFlashWriteBlankDuration + kPacketsPerPage * kPacketDuration;
-constexpr double kNumPages = ceil(kDataLength * 1.0 / kPageSize);
-constexpr double kApproxSignalDuration = 3 + kNumPages * kPageDuration;
-constexpr uint32_t kFifoCapacity =
-    lround(kApproxSignalDuration * kEncoderSampleRate * kResamplingRatio);
-
-static Decoder <kSamplesPerSymbol, kPacketSize, kPageSize, kFifoCapacity> qpsk_;
+static Decoder<kSamplesPerSymbol, kPacketSize, kPageSize, kFifoCapacity> qpsk_;
 static std::vector<uint8_t> data_;
-static std::deque<int16_t> signal_;
 
 void DebugError(Error error)
 {
@@ -171,127 +149,48 @@ void ReceiveError(Error error)
     }
 }
 
-void EncodeSymbol(std::deque<int16_t>& signal, uint8_t symbol)
+std::vector<float> Resample(std::vector<float> signal, double ratio)
 {
-    // assumes the symbol rate is equal to the carrier frequency
-    int16_t msb = (symbol & 2) - 1;
-    int16_t lsb = (symbol & 1) * 2 - 1;
-
-    for (uint32_t i = 0; i < kSamplesPerSymbol; i++)
-    {
-        double phase = 2 * M_PI * i / kSamplesPerSymbol;
-        double sample = (msb * cos(phase) - lsb * sin(phase)) / M_SQRT2;
-        assert(sample >= -1 && sample <= 1);
-        signal.push_back(lround(32767.0 * sample));
-    }
-}
-
-void CodeBlank(std::deque<int16_t>& signal, double duration)
-{
-    uint32_t num_zeros = lround(duration * kSymbolRate);
-
-    for (uint32_t i = 0; i < num_zeros; i++)
-    {
-        EncodeSymbol(signal, 0);
-    }
-}
-
-void CodeIntro(std::deque<int16_t>& signal)
-{
-    uint32_t num_zeros = kEncoderSampleRate;
-
-    for (uint32_t i = 0; i < num_zeros; i++)
-    {
-        signal.push_back(0);
-    }
-
-    CodeBlank(signal, 1.0);
-}
-
-void CodeOutro(std::deque<int16_t>& signal)
-{
-    CodeBlank(signal, 1.0);
-}
-
-void EncodeByte(std::deque<int16_t>& signal, uint8_t byte)
-{
-    EncodeSymbol(signal, (byte >> 6) & 3);
-    EncodeSymbol(signal, (byte >> 4) & 3);
-    EncodeSymbol(signal, (byte >> 2) & 3);
-    EncodeSymbol(signal, (byte >> 0) & 3);
-}
-
-void CodePacket(std::deque<int16_t>& signal, uint8_t *data)
-{
-    uint32_t crc = crc32(kCRCSeed, data, kPacketSize);
-
-    for (uint32_t i = 0; i < sizeof(kPacketPreamble); i++)
-    {
-        EncodeByte(signal, kPacketPreamble[i]);
-    }
-
-    for (uint32_t i = 0; i < kPacketSize; i++)
-    {
-        EncodeByte(signal, data[i]);
-    }
-
-    EncodeByte(signal, crc >> 24);
-    EncodeByte(signal, crc >> 16);
-    EncodeByte(signal, crc >> 8);
-    EncodeByte(signal, crc);
-}
-
-void CodeData(std::deque<int16_t>& signal, std::vector<uint8_t>& data)
-{
-    while (data.size() % kPageSize)
-    {
-        data.push_back(0xFF);
-    }
-
-    uint32_t num_pages = data.size() / kPageSize;
-
-    for (uint32_t page = 0; page < num_pages; page++)
-    {
-        for (uint32_t packet = 0; packet < kPacketsPerPage; packet++)
-        {
-            uint32_t offset = page * kPageSize + packet * kPacketSize;
-            CodePacket(signal, &data[offset]);
-        }
-
-        CodeBlank(signal, kFlashWriteBlankDuration);
-    }
-}
-
-void Resample(std::deque<int16_t>& signal, double ratio)
-{
-    std::deque<int16_t> resampled;
+    std::vector<float> resampled;
     uint32_t length = floor(signal.size() * ratio);
 
     for (uint32_t i = 0; i < length; i++)
     {
         double position = i / ratio;
         uint32_t x0 = floor(position);
-        int16_t y0 = signal[x0];
-        int16_t y1 = signal[x0 + 1];
+        float y0 = signal[x0];
+        float y1 = signal[x0 + 1];
         position = fmod(position, 1.0);
         resampled.push_back(y0 + position * (y1 - y0));
     }
 
-    signal = resampled;
+    return resampled;
 }
 
-void AddNoise(std::deque<int16_t>& signal, double noise_level)
+std::vector<float> Scale(std::vector<float> signal, float level)
+{
+    for (auto it = signal.begin(); it != signal.end(); it++)
+    {
+        *it *= level;
+    }
+
+    return signal;
+}
+
+std::vector<float> AddNoise(std::vector<float> signal, float noise_level)
 {
     std::minstd_rand rng;
-    std::uniform_real_distribution<double> dist(-1, 1);
+    std::uniform_real_distribution<float> dist(-1, 1);
 
     for (auto it = signal.begin(); it != signal.end(); it++)
     {
-        double sample = *it / 32767.0;
+        float sample = *it;
         sample += noise_level * dist(rng);
         sample = (sample > 1) ? 1 : (sample < -1) ? -1 : sample;
-        *it = sample * 32767.0;
+        *it = sample;
     }
+
+    return signal;
 }
 
 bool ReceivePage(uint32_t* data)
@@ -307,40 +206,58 @@ bool ReceivePage(uint32_t* data)
     return true;
 }
 
+std::vector<float> LoadAudio(std::string file_path)
+{
+    std::ifstream wav_file;
+    wav_file.open(file_path, std::ios::in | std::ios::binary);
+    wav_file.seekg(44);
+    std::vector<float> signal;
+    while (!wav_file.eof())
+    {
+        int16_t sample = (wav_file.get() & 0xFF);
+        sample |= (wav_file.get() << 8);
+        signal.push_back(sample / 32767.f);
+    }
+    wav_file.close();
+    return signal;
+}
+
+std::vector<uint8_t> LoadBinary(std::string file_path)
+{
+    std::ifstream bin_file;
+    bin_file.open(file_path, std::ios::in | std::ios::binary);
+    std::vector<uint8_t> bin_data;
+    while (!bin_file.eof())
+    {
+        bin_data.push_back(bin_file.get());
+    }
+    bin_file.close();
+    return bin_data;
+}
+
 TEST(DecoderTest, Decode)
 {
-    ASSERT_EQ(kPageSize % kPacketSize, 0);
     qpsk_.Init(kCRCSeed);
     data_.clear();
 
-    // generate random data to encode
-    std::minstd_rand rng;
-    std::uniform_int_distribution<uint8_t> dist(0, 0xFF);
-    rng.seed(0);
-    std::vector<uint8_t> input_data;
-    for (uint32_t i = 0; i < kDataLength; i++)
-    {
-        input_data.push_back(dist(rng));
-    }
+    // Load audio data from wav file
+    auto signal = LoadAudio("unit_tests/data.wav");
 
-    // encode the qpsk signal
-    CodeIntro(signal_);
-    CodeData(signal_, input_data);
-    CodeOutro(signal_);
-    Resample(signal_, kResamplingRatio);
-    AddNoise(signal_, 0.0625);
+    // Resample, attenuate, and add noise
+    signal = Resample(signal, kResamplingRatio);
+    signal = Scale(signal, 0.1f);
+    signal = AddNoise(signal, 0.025);
 
-    uint32_t signal_length = signal_.size();
+    uint32_t signal_length = signal.size();
     ASSERT_LE(signal_length, kFifoCapacity);
 
-    // push the signal into the qpsk module's fifo
-    while (!signal_.empty())
+    // Push the signal into the decoder's fifo
+    for (auto sample : signal)
     {
-        qpsk_.Push(signal_.front() / 32768.f * 0.1);
-        signal_.pop_front();
+        qpsk_.Push(sample);
     }
 
-    // begin decoding
+    // Begin decoding
     Error error = qpsk_.Receive(ReceivePage, nullptr, signal_length);
 
     if (error != ERROR_NONE)
@@ -349,14 +266,14 @@ TEST(DecoderTest, Decode)
         FAIL();
     }
 
-    ASSERT_GE(data_.size(), kDataLength);
+    // Compare the received data to the bin file
+    auto bin_data = LoadBinary("unit_tests/data.bin");
 
-    // reseed the rng and check that we got back identical data
-    rng.seed(0);
+    ASSERT_GE(data_.size(), bin_data.size());
 
     for (uint32_t i = 0; i < data_.size(); i++)
     {
-        uint8_t expected = (i < kDataLength) ? dist(rng) : 0xFF;
+        uint8_t expected = (i < bin_data.size()) ? bin_data[i] : kFillByte;
         ASSERT_EQ(data_[i], expected) << "at i = " << i;
     }
 }
