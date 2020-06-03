@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 #include <cmath>
+#include <deque>
 #include <vector>
 #include <random>
 #include <string>
@@ -42,11 +43,10 @@ constexpr uint32_t kPacketSize = 256;
 constexpr uint32_t kCRCSeed = 0;
 constexpr uint32_t kSamplesPerSymbol = kEncoderSampleRate / kSymbolRate;
 constexpr uint8_t kFillByte = 0xFF;
+constexpr float kFlashWriteTime = 0.025f;
 
-constexpr uint32_t kFifoCapacity = 1 << 24;
-
-static Decoder<kSamplesPerSymbol, kPacketSize, kPageSize, kFifoCapacity> qpsk_;
-static std::vector<uint8_t> data_;
+static Decoder<kSamplesPerSymbol, kPacketSize, kPageSize, 256> qpsk_;
+using Signal = std::deque<float>;
 
 void DebugError(Error error)
 {
@@ -132,10 +132,6 @@ void ReceiveError(Error error)
         printf("Error : overflow\n");
         break;
 
-    case ERROR_PAGE_WRITE:
-        printf("Error : page write\n");
-        break;
-
     case ERROR_ABORT:
         printf("Error : abort\n");
         break;
@@ -149,9 +145,9 @@ void ReceiveError(Error error)
     }
 }
 
-std::vector<float> Resample(std::vector<float> signal, double ratio)
+Signal Resample(Signal signal, double ratio)
 {
-    std::vector<float> resampled;
+    Signal resampled;
     uint32_t length = floor(signal.size() * ratio);
 
     for (uint32_t i = 0; i < length; i++)
@@ -167,7 +163,7 @@ std::vector<float> Resample(std::vector<float> signal, double ratio)
     return resampled;
 }
 
-std::vector<float> Scale(std::vector<float> signal, float level)
+Signal Scale(Signal signal, float level)
 {
     for (auto it = signal.begin(); it != signal.end(); it++)
     {
@@ -177,7 +173,7 @@ std::vector<float> Scale(std::vector<float> signal, float level)
     return signal;
 }
 
-std::vector<float> AddNoise(std::vector<float> signal, float noise_level)
+Signal AddNoise(Signal signal, float noise_level)
 {
     std::minstd_rand rng;
     std::uniform_real_distribution<float> dist(-1, 1);
@@ -193,25 +189,12 @@ std::vector<float> AddNoise(std::vector<float> signal, float noise_level)
     return signal;
 }
 
-bool ReceivePage(uint32_t* data)
-{
-    for (uint32_t i = 0; i < kPageSize / 4; i++)
-    {
-        data_.push_back(data[i] >>  0);
-        data_.push_back(data[i] >>  8);
-        data_.push_back(data[i] >> 16);
-        data_.push_back(data[i] >> 24);
-    }
-
-    return true;
-}
-
-std::vector<float> LoadAudio(std::string file_path)
+Signal LoadAudio(std::string file_path)
 {
     std::ifstream wav_file;
     wav_file.open(file_path, std::ios::in | std::ios::binary);
     wav_file.seekg(44);
-    std::vector<float> signal;
+    Signal signal;
     while (!wav_file.eof())
     {
         int16_t sample = (wav_file.get() & 0xFF);
@@ -238,7 +221,6 @@ std::vector<uint8_t> LoadBinary(std::string file_path)
 TEST(DecoderTest, Decode)
 {
     qpsk_.Init(kCRCSeed);
-    data_.clear();
 
     // Load audio data from wav file
     auto signal = LoadAudio("unit_tests/data.wav");
@@ -248,33 +230,54 @@ TEST(DecoderTest, Decode)
     signal = Scale(signal, 0.1f);
     signal = AddNoise(signal, 0.025);
 
-    uint32_t signal_length = signal.size();
-    ASSERT_LE(signal_length, kFifoCapacity);
-
-    // Push the signal into the decoder's fifo
-    for (auto sample : signal)
-    {
-        qpsk_.Push(sample);
-    }
-
     // Begin decoding
-    auto result = qpsk_.Receive(ReceivePage, nullptr, signal_length);
-
-    if (result == RESULT_ERROR)
+    std::vector<uint8_t> data;
+    while (signal.size())
     {
-        ReceiveError(qpsk_.GetError());
-        FAIL();
+        float sample = signal.front();
+        signal.pop_front();
+        qpsk_.Push(sample);
+        auto result = qpsk_.Receive();
+
+        if (result == RESULT_ERROR)
+        {
+            ReceiveError(qpsk_.GetError());
+            FAIL();
+        }
+        else if (result == RESULT_PAGE_COMPLETE)
+        {
+            uint32_t* page = qpsk_.GetPage();
+            for (uint32_t i = 0; i < kPageSize / 4; i++)
+            {
+                data.push_back(page[i] >>  0);
+                data.push_back(page[i] >>  8);
+                data.push_back(page[i] >> 16);
+                data.push_back(page[i] >> 24);
+            }
+
+            // Simulate stall caused by flash write
+            for (int i = 0; i < kFlashWriteTime * kDecoderSampleRate; i++)
+            {
+                if (!signal.size())
+                {
+                    break;
+                }
+                float sample = signal.front();
+                signal.pop_front();
+                qpsk_.Push(sample);
+            }
+        }
     }
 
     // Compare the received data to the bin file
     auto bin_data = LoadBinary("unit_tests/data.bin");
 
-    ASSERT_GE(data_.size(), bin_data.size());
+    ASSERT_GE(data.size(), bin_data.size());
 
-    for (uint32_t i = 0; i < data_.size(); i++)
+    for (uint32_t i = 0; i < data.size(); i++)
     {
         uint8_t expected = (i < bin_data.size()) ? bin_data[i] : kFillByte;
-        ASSERT_EQ(data_[i], expected) << "at i = " << i;
+        ASSERT_EQ(data[i], expected) << "at i = " << i;
     }
 }
 
