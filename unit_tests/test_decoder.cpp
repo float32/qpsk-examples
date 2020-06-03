@@ -258,11 +258,11 @@ TEST(DecoderTest, Decode)
     }
 
     // Begin decoding
-    Error error = qpsk_.Receive(ReceivePage, nullptr, signal_length);
+    auto result = qpsk_.Receive(ReceivePage, nullptr, signal_length);
 
-    if (error != ERROR_NONE)
+    if (result == RESULT_ERROR)
     {
-        ReceiveError(error);
+        ReceiveError(qpsk_.GetError());
         FAIL();
     }
 
