@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 #include <cmath>
+#include <random>
 #include "inc/window.h"
 
 namespace qpsk::test::window
@@ -40,10 +41,10 @@ protected:
 };
 
 using WindowTypes = ::testing::Types<
-    Window<double, 1>,
-    Window<double, 7>,
-    Window<double, 8>,
-    Window<double, 9>>;
+    Window<float, 1>,
+    Window<float, 7>,
+    Window<float, 8>,
+    Window<float, 9>>;
 TYPED_TEST_CASE(WindowTest, WindowTypes);
 
 TYPED_TEST(WindowTest, All)
@@ -53,7 +54,7 @@ TYPED_TEST(WindowTest, All)
     ASSERT_EQ(this->window_.Sum(), 0);
     ASSERT_EQ(this->window_.Average(), 0);
 
-    double sum = 0;
+    float sum = 0;
 
     for (int32_t i = 0; i < 1000; i++)
     {
@@ -75,11 +76,33 @@ TYPED_TEST(WindowTest, All)
             }
         }
 
-        ASSERT_DOUBLE_EQ(this->window_.Sum(), sum)
+        ASSERT_FLOAT_EQ(this->window_.Sum(), sum)
             << "i = " << i;
-        ASSERT_DOUBLE_EQ(this->window_.Average(), sum / window_length)
+        ASSERT_FLOAT_EQ(this->window_.Average(), sum / window_length)
             << "i = " << i;
     }
+}
+
+TYPED_TEST(WindowTest, Drift)
+{
+    std::minstd_rand rng;
+    rng.seed(1);
+    std::uniform_real_distribution<float> dist(0, 1);
+
+    ASSERT_EQ(this->window_.Sum(), 0);
+
+    for (int i = 0; i < 1000000; i++)
+    {
+        this->window_.Write(dist(rng));
+    }
+
+    float sum = 0;
+    for (unsigned int i = 0; i < this->window_.length(); i++)
+    {
+        sum += this->window_[i];
+    }
+
+    ASSERT_FLOAT_EQ(this->window_.Sum(), sum);
 }
 
 template <typename T>
@@ -95,12 +118,12 @@ protected:
 };
 
 using BayTypes = ::testing::Types<
-    Bay<double, 1, 1>,
-    Bay<double, 1, 4>,
-    Bay<double, 7, 1>,
-    Bay<double, 9, 1>,
-    Bay<double, 8, 1>,
-    Bay<double, 8, 4>>;
+    Bay<float, 1, 1>,
+    Bay<float, 1, 4>,
+    Bay<float, 7, 1>,
+    Bay<float, 9, 1>,
+    Bay<float, 8, 1>,
+    Bay<float, 8, 4>>;
 TYPED_TEST_CASE(BayTest, BayTypes);
 
 TYPED_TEST(BayTest, All)
@@ -111,7 +134,7 @@ TYPED_TEST(BayTest, All)
     ASSERT_EQ(this->bay_.Sum(), 0);
     ASSERT_EQ(this->bay_.Average(), 0);
 
-    double sum = 0;
+    float sum = 0;
     int32_t total_length = bay_width * window_length;
 
     for (int32_t i = 0; i < 1000; i++)
@@ -139,11 +162,36 @@ TYPED_TEST(BayTest, All)
             }
         }
 
-        ASSERT_DOUBLE_EQ(this->bay_.Sum(), sum)
+        ASSERT_FLOAT_EQ(this->bay_.Sum(), sum)
             << "i = " << i;
-        ASSERT_DOUBLE_EQ(this->bay_.Average(), sum / total_length)
+        ASSERT_FLOAT_EQ(this->bay_.Average(), sum / total_length)
             << "i = " << i;
     }
+}
+
+TYPED_TEST(BayTest, Drift)
+{
+    std::minstd_rand rng;
+    rng.seed(1);
+    std::uniform_real_distribution<float> dist(0, 1);
+
+    ASSERT_EQ(this->bay_.Sum(), 0);
+
+    for (int i = 0; i < 1000000; i++)
+    {
+        this->bay_.Write(dist(rng));
+    }
+
+    float sum = 0;
+    for (unsigned int k = 0; k < this->bay_.width(); k++)
+    {
+        for (unsigned int j = 0; j < this->bay_.length(); j++)
+        {
+            sum += this->bay_[k][j];
+        }
+    }
+
+    ASSERT_FLOAT_EQ(this->bay_.Sum(), sum);
 }
 
 }
