@@ -6,6 +6,7 @@
 #include <cassert>
 #include <string>
 #include <vector>
+#include <random>
 #include <cstdio>
 #include <cmath>
 
@@ -64,6 +65,63 @@ Signal LoadAudio(int carrier_rate, int packet_size, int page_size)
         signal.push_back(sample / 32767.f);
     }
     pclose(wav_file);
+    return signal;
+}
+
+    Signal Resample(Signal signal, double ratio)
+{
+    if (ratio != 1.0)
+    {
+        Signal resampled;
+        uint32_t length = floor(signal.size() * ratio);
+
+        for (uint32_t i = 0; i < length; i++)
+        {
+            double position = i / ratio;
+            uint32_t x0 = floor(position);
+            float y0 = signal[x0];
+            float y1 = signal[x0 + 1];
+            position = fmod(position, 1.0);
+            resampled.push_back(y0 + position * (y1 - y0));
+        }
+
+        return resampled;
+    }
+    else
+    {
+        return signal;
+    }
+}
+
+Signal Scale(Signal signal, float level)
+{
+    if (level != 1.f)
+    {
+        for (auto it = signal.begin(); it != signal.end(); it++)
+        {
+            *it *= level;
+        }
+    }
+
+    return signal;
+}
+
+Signal AddNoise(Signal signal, float noise_level)
+{
+    if (noise_level != 0.f)
+    {
+        std::minstd_rand rng;
+        std::uniform_real_distribution<float> dist(-1, 1);
+
+        for (auto it = signal.begin(); it != signal.end(); it++)
+        {
+            float sample = *it;
+            sample += noise_level * dist(rng);
+            sample = (sample > 1) ? 1 : (sample < -1) ? -1 : sample;
+            *it = sample;
+        }
+    }
+
     return signal;
 }
 
@@ -137,6 +195,11 @@ public:
 void SimQPSK(std::string work_dir)
 {
     auto signal = LoadAudio(kSymbolRate, kPacketSize, kPageSize);
+    // Resample, attenuate, and add noise
+    signal = Resample(signal, 1.02f);
+    signal = Scale(signal, 0.1f);
+    signal = AddNoise(signal, 0.01f);
+
     auto vcd_file = work_dir + "/sim-qpsk.vcd";
     VCDWriter vcd{vcd_file,
         makeVCDHeader(TimeScale::ONE, TimeScaleUnit::us, utils::now())};
