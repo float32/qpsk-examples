@@ -23,6 +23,7 @@
 #include <cmath>
 #include <deque>
 #include <tuple>
+#include <cstdio>
 #include <vector>
 #include <random>
 #include <string>
@@ -109,6 +110,8 @@ public:
     static constexpr int kPacketSize     = std::tuple_element_t<1, T>::value;
     static constexpr int kPageSize       = std::tuple_element_t<2, T>::value;
     Decoder<kSymbolDuration, kPacketSize, kPageSize, 256> qpsk_;
+
+    static constexpr int kCarrierRate = kEncoderSampleRate / kSymbolDuration;
 
     void DebugError(Error error)
     {
@@ -268,6 +271,28 @@ public:
         return signal;
     }
 
+    static Signal LoadAudio(int carrier_rate, int packet_size, int page_size)
+    {
+        Signal signal;
+        std::stringstream ss;
+        ss << "python3 encoder.py -s 48000 -w 0.05 -t bin"
+            << " -i unit_tests/data/data.bin -o -"
+            << " -c " << carrier_rate
+            << " -p " << packet_size
+            << " -f " << page_size;
+        std::string cmd = ss.str();
+        auto wav_file = popen(cmd.c_str(), "r");
+        fseek(wav_file, 44, SEEK_SET);
+        while (!feof(wav_file))
+        {
+            int16_t sample = (fgetc(wav_file) & 0xFF);
+            sample |= (fgetc(wav_file) << 8);
+            signal.push_back(sample / 32767.f);
+        }
+        pclose(wav_file);
+        return signal;
+    }
+
     static std::vector<uint8_t> LoadBinary(std::string file_path)
     {
         std::ifstream bin_file;
@@ -285,13 +310,7 @@ public:
     static void SetUpTestCase()
     {
         test_data_ = LoadBinary("unit_tests/data/data.bin");
-        std::stringstream ss;
-        ss << "build/artifact/test-wav/decode"
-            << "-" << (kEncoderSampleRate / kSymbolDuration)
-            << "-" << kPacketSize
-            << "-" << kPageSize
-            << ".wav";
-        test_audio_ = LoadAudio(ss.str());
+        test_audio_ = LoadAudio(kCarrierRate, kPacketSize, kPageSize);
     }
 
     void SetUp() override
