@@ -22,10 +22,13 @@
 
 #include <cmath>
 #include <deque>
+#include <tuple>
 #include <vector>
 #include <random>
 #include <string>
 #include <fstream>
+#include <sstream>
+#include <type_traits>
 #include <gtest/gtest.h>
 #include "decoder.h"
 
@@ -41,26 +44,56 @@ constexpr uint32_t kCRCSeed = 0;
 constexpr uint8_t kFillByte = 0xFF;
 constexpr float kFlashWriteTime = 0.025f;
 
-using DecoderTypes = ::testing::Types<
+template <int A, int B, int C>
+using ParamType = std::tuple<
+    std::integral_constant<int, A>,
+    std::integral_constant<int, B>,
+    std::integral_constant<int, C>>;
+using ParamTypeList = ::testing::Types<
     /*[[[cog
-    import itertools
-    symbol_duration = (6, 8, 12, 16)
-    #packet_size = (69, 256, 1024)
-    packet_size = (256,)
-    #num_packets = (1, 4, 13)
-    num_packets = (4,)
-    param_lists = itertools.product(symbol_duration, packet_size, num_packets)
+    from data.encodings import GenerateEncodings
     lines = []
-    for (sd, ps, np) in param_lists:
-        page_size = ps * np
-        lines.append('Decoder<{:2}, {:4}, {:5}, 256>'
-            .format(sd, ps, page_size))
+    for e in GenerateEncodings():
+        lines.append('ParamType<{:2}, {:4}, {:5}>'
+            .format(e.symbol_duration, e.packet_size, e.page_size))
     cog.outl(',\n'.join(lines))
     ]]]*/
-    Decoder< 6,  256,  1024, 256>,
-    Decoder< 8,  256,  1024, 256>,
-    Decoder<12,  256,  1024, 256>,
-    Decoder<16,  256,  1024, 256>
+    ParamType< 6,   52,    52>,
+    ParamType< 6,   52,   208>,
+    ParamType< 6,   52,   676>,
+    ParamType< 6,  256,   256>,
+    ParamType< 6,  256,  1024>,
+    ParamType< 6,  256,  3328>,
+    ParamType< 6, 1024,  1024>,
+    ParamType< 6, 1024,  4096>,
+    ParamType< 6, 1024, 13312>,
+    ParamType< 8,   52,    52>,
+    ParamType< 8,   52,   208>,
+    ParamType< 8,   52,   676>,
+    ParamType< 8,  256,   256>,
+    ParamType< 8,  256,  1024>,
+    ParamType< 8,  256,  3328>,
+    ParamType< 8, 1024,  1024>,
+    ParamType< 8, 1024,  4096>,
+    ParamType< 8, 1024, 13312>,
+    ParamType<12,   52,    52>,
+    ParamType<12,   52,   208>,
+    ParamType<12,   52,   676>,
+    ParamType<12,  256,   256>,
+    ParamType<12,  256,  1024>,
+    ParamType<12,  256,  3328>,
+    ParamType<12, 1024,  1024>,
+    ParamType<12, 1024,  4096>,
+    ParamType<12, 1024, 13312>,
+    ParamType<16,   52,    52>,
+    ParamType<16,   52,   208>,
+    ParamType<16,   52,   676>,
+    ParamType<16,  256,   256>,
+    ParamType<16,  256,  1024>,
+    ParamType<16,  256,  3328>,
+    ParamType<16, 1024,  1024>,
+    ParamType<16, 1024,  4096>,
+    ParamType<16, 1024, 13312>
     //[[[end]]]
     >;
 
@@ -71,7 +104,11 @@ public:
     using Signal = std::deque<float>;
     static inline Signal test_audio_;
     static inline std::vector<uint8_t> test_data_;
-    T qpsk_;
+
+    static constexpr int kSymbolDuration = std::tuple_element_t<0, T>::value;
+    static constexpr int kPacketSize     = std::tuple_element_t<1, T>::value;
+    static constexpr int kPageSize       = std::tuple_element_t<2, T>::value;
+    Decoder<kSymbolDuration, kPacketSize, kPageSize, 256> qpsk_;
 
     void DebugError(Error error)
     {
@@ -122,7 +159,7 @@ public:
         {
             printf("  Packet data      :\n");
 
-            for (uint32_t row = 0; row < qpsk_.PacketSize(); row += 16)
+            for (uint32_t row = 0; row < kPacketSize; row += 16)
             {
                 printf("    ");
 
@@ -245,8 +282,14 @@ public:
 
     static void SetUpTestCase()
     {
-        test_data_ = LoadBinary("unit_tests/data.bin");
-        test_audio_ = LoadAudio("unit_tests/data.wav");
+        test_data_ = LoadBinary("unit_tests/data/data.bin");
+        std::stringstream ss;
+        ss << "build/artifact/test-wav/decode"
+            << "-" << (kEncoderSampleRate / kSymbolDuration)
+            << "-" << kPacketSize
+            << "-" << kPageSize
+            << ".wav";
+        test_audio_ = LoadAudio(ss.str());
     }
 
     void SetUp() override
@@ -279,7 +322,7 @@ public:
             else if (result == RESULT_PAGE_COMPLETE)
             {
                 uint32_t* page = qpsk_.GetPage();
-                for (uint32_t i = 0; i < qpsk_.PageSize() / 4; i++)
+                for (uint32_t i = 0; i < kPageSize / 4; i++)
                 {
                     data.push_back(page[i] >>  0);
                     data.push_back(page[i] >>  8);
@@ -312,11 +355,11 @@ public:
     }
 };
 
-TYPED_TEST_CASE(DecoderTest, DecoderTypes);
+TYPED_TEST_CASE(DecoderTest, ParamTypeList);
 
 TYPED_TEST(DecoderTest, Decode)
 {
-    this->Decode(kResamplingRatio, 0.1f, 0.025f);
+    this->Decode(kResamplingRatio, 0.1f, 0.01f);
 }
 
 }
