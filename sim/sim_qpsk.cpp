@@ -3,8 +3,10 @@
 #include <cstdint>
 #include <fstream>
 #include <sstream>
+#include <cassert>
 #include <string>
 #include <vector>
+#include <cstdio>
 #include <cmath>
 
 #include "sim/vcd-writer/vcd_writer.h"
@@ -15,16 +17,12 @@ namespace qpsk::sim
 
 using namespace vcd;
 
-constexpr uint32_t kDecoderSampleRate = 48077;
-constexpr uint32_t kEncoderSampleRate = 48000;
-constexpr double kResamplingRatio =
-    kDecoderSampleRate * 1.0 / kEncoderSampleRate;
-
+constexpr uint32_t kSampleRate = 48000;
 constexpr uint32_t kSymbolRate = 6000;
 constexpr uint32_t kPageSize = 1024;
 constexpr uint32_t kPacketSize = 256;
 constexpr uint32_t kCRCSeed = 0;
-constexpr uint32_t kSamplesPerSymbol = kEncoderSampleRate / kSymbolRate;
+constexpr uint32_t kSamplesPerSymbol = kSampleRate / kSymbolRate;
 constexpr uint8_t kFillByte = 0xFF;
 constexpr float kFlashWriteTime = 0.025f;
 
@@ -34,6 +32,7 @@ Signal LoadAudio(std::string file_path)
 {
     std::ifstream wav_file;
     wav_file.open(file_path, std::ios::in | std::ios::binary);
+        assert(wav_file.good());
     wav_file.seekg(44);
     Signal signal;
     while (!wav_file.eof())
@@ -43,6 +42,28 @@ Signal LoadAudio(std::string file_path)
         signal.push_back(sample / 32767.f);
     }
     wav_file.close();
+    return signal;
+}
+
+Signal LoadAudio(int carrier_rate, int packet_size, int page_size)
+{
+    Signal signal;
+    std::stringstream ss;
+    ss << "python3 encoder.py -s 48000 -w 0.05 -t bin"
+        << " -i unit_tests/data/data.bin -o -"
+        << " -c " << carrier_rate
+        << " -p " << packet_size
+        << " -f " << page_size;
+    std::string cmd = ss.str();
+    auto wav_file = popen(cmd.c_str(), "r");
+    fseek(wav_file, 44, SEEK_SET);
+    while (!feof(wav_file))
+    {
+        int16_t sample = (fgetc(wav_file) & 0xFF);
+        sample |= (fgetc(wav_file) << 8);
+        signal.push_back(sample / 32767.f);
+    }
+    pclose(wav_file);
     return signal;
 }
 
@@ -115,7 +136,7 @@ public:
 
 void SimQPSK(std::string work_dir)
 {
-    auto signal = LoadAudio("unit_tests/data.wav");
+    auto signal = LoadAudio(kSymbolRate, kPacketSize, kPageSize);
     auto vcd_file = work_dir + "/sim-qpsk.vcd";
     VCDWriter vcd{vcd_file,
         makeVCDHeader(TimeScale::ONE, TimeScaleUnit::us, utils::now())};
@@ -176,7 +197,7 @@ void SimQPSK(std::string work_dir)
         v_pll_crfq_out.change(time, qpsk.RecoveredQ());
         v_corr_out.change(time, qpsk.Correlation());
 
-        time += 1000000 / kEncoderSampleRate;
+        time += 1000000 / kSampleRate;
     }
 }
 
