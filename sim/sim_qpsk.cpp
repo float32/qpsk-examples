@@ -68,7 +68,7 @@ Signal LoadAudio(int carrier_rate, int packet_size, int page_size)
     return signal;
 }
 
-    Signal Resample(Signal signal, double ratio)
+Signal Resample(Signal signal, double ratio)
 {
     if (ratio != 1.0)
     {
@@ -192,7 +192,7 @@ public:
     }
 };
 
-void SimQPSK(std::string work_dir)
+void SimQPSK(std::string vcd_file)
 {
     auto signal = LoadAudio(kSymbolRate, kPacketSize, kPageSize);
     // Resample, attenuate, and add noise
@@ -200,7 +200,6 @@ void SimQPSK(std::string work_dir)
     signal = Scale(signal, 0.1f);
     signal = AddNoise(signal, 0.01f);
 
-    auto vcd_file = work_dir + "/sim-qpsk.vcd";
     VCDWriter vcd{vcd_file,
         makeVCDHeader(TimeScale::ONE, TimeScaleUnit::us, utils::now())};
 

@@ -2,7 +2,7 @@
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
 [*] Wed Apr 25 23:31:56 2018
 [*]
-[dumpfile] "~/repos/qpsk/build/artifact/sim-qpsk/sim-qpsk.vcd"
+[dumpfile] "~/repos/qpsk/build/artifact/sim-qpsk.vcd"
 [savefile] "~/repos/qpsk/sim/sim-qpsk.gtkw"
 [size] 2155 943
 [pos] -1 -1
