@@ -255,6 +255,7 @@ public:
     {
         std::ifstream wav_file;
         wav_file.open(file_path, std::ios::in | std::ios::binary);
+        assert(wav_file.good());
         wav_file.seekg(44);
         Signal signal;
         while (!wav_file.eof())
@@ -271,6 +272,7 @@ public:
     {
         std::ifstream bin_file;
         bin_file.open(file_path, std::ios::in | std::ios::binary);
+        assert(bin_file.good());
         std::vector<uint8_t> bin_data;
         while (!bin_file.eof())
         {
