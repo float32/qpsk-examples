@@ -36,11 +36,7 @@
 namespace qpsk::test::decoder
 {
 
-constexpr uint32_t kDecoderSampleRate = 48077;
-constexpr uint32_t kEncoderSampleRate = 48000;
-constexpr double kResamplingRatio =
-    kDecoderSampleRate * 1.0 / kEncoderSampleRate;
-
+constexpr uint32_t kSampleRate = 48000;
 constexpr uint32_t kCRCSeed = 0;
 constexpr uint8_t kFillByte = 0xFF;
 constexpr float kFlashWriteTime = 0.025f;
@@ -61,40 +57,28 @@ using ParamTypeList = ::testing::Types<
     ]]]*/
     ParamType< 6,   52,    52>,
     ParamType< 6,   52,   208>,
-    ParamType< 6,   52,   676>,
+    ParamType< 6,   52,   364>,
     ParamType< 6,  256,   256>,
     ParamType< 6,  256,  1024>,
-    ParamType< 6,  256,  3328>,
-    ParamType< 6, 1024,  1024>,
-    ParamType< 6, 1024,  4096>,
-    ParamType< 6, 1024, 13312>,
+    ParamType< 6,  256,  1792>,
     ParamType< 8,   52,    52>,
     ParamType< 8,   52,   208>,
-    ParamType< 8,   52,   676>,
+    ParamType< 8,   52,   364>,
     ParamType< 8,  256,   256>,
     ParamType< 8,  256,  1024>,
-    ParamType< 8,  256,  3328>,
-    ParamType< 8, 1024,  1024>,
-    ParamType< 8, 1024,  4096>,
-    ParamType< 8, 1024, 13312>,
+    ParamType< 8,  256,  1792>,
     ParamType<12,   52,    52>,
     ParamType<12,   52,   208>,
-    ParamType<12,   52,   676>,
+    ParamType<12,   52,   364>,
     ParamType<12,  256,   256>,
     ParamType<12,  256,  1024>,
-    ParamType<12,  256,  3328>,
-    ParamType<12, 1024,  1024>,
-    ParamType<12, 1024,  4096>,
-    ParamType<12, 1024, 13312>,
+    ParamType<12,  256,  1792>,
     ParamType<16,   52,    52>,
     ParamType<16,   52,   208>,
-    ParamType<16,   52,   676>,
+    ParamType<16,   52,   364>,
     ParamType<16,  256,   256>,
     ParamType<16,  256,  1024>,
-    ParamType<16,  256,  3328>,
-    ParamType<16, 1024,  1024>,
-    ParamType<16, 1024,  4096>,
-    ParamType<16, 1024, 13312>
+    ParamType<16,  256,  1792>
     //[[[end]]]
     >;
 
@@ -111,7 +95,7 @@ public:
     static constexpr int kPageSize       = std::tuple_element_t<2, T>::value;
     Decoder<kSymbolDuration, kPacketSize, kPageSize, 256> qpsk_;
 
-    static constexpr int kCarrierRate = kEncoderSampleRate / kSymbolDuration;
+    static constexpr int kCarrierRate = kSampleRate / kSymbolDuration;
 
     void DebugError(Error error)
     {
@@ -212,27 +196,37 @@ public:
 
     Signal Resample(Signal signal, double ratio)
     {
-        Signal resampled;
-        uint32_t length = floor(signal.size() * ratio);
-
-        for (uint32_t i = 0; i < length; i++)
+        if (ratio != 1.0)
         {
-            double position = i / ratio;
-            uint32_t x0 = floor(position);
-            float y0 = signal[x0];
-            float y1 = signal[x0 + 1];
-            position = fmod(position, 1.0);
-            resampled.push_back(y0 + position * (y1 - y0));
-        }
+            Signal resampled;
+            uint32_t length = floor(signal.size() * ratio);
 
-        return resampled;
+            for (uint32_t i = 0; i < length; i++)
+            {
+                double position = i / ratio;
+                uint32_t x0 = floor(position);
+                float y0 = signal[x0];
+                float y1 = signal[x0 + 1];
+                position = fmod(position, 1.0);
+                resampled.push_back(y0 + position * (y1 - y0));
+            }
+
+            return resampled;
+        }
+        else
+        {
+            return signal;
+        }
     }
 
     Signal Scale(Signal signal, float level)
     {
-        for (auto it = signal.begin(); it != signal.end(); it++)
+        if (level != 1.f)
         {
-            *it *= level;
+            for (auto it = signal.begin(); it != signal.end(); it++)
+            {
+                *it *= level;
+            }
         }
 
         return signal;
@@ -240,15 +234,18 @@ public:
 
     Signal AddNoise(Signal signal, float noise_level)
     {
-        std::minstd_rand rng;
-        std::uniform_real_distribution<float> dist(-1, 1);
-
-        for (auto it = signal.begin(); it != signal.end(); it++)
+        if (noise_level != 0.f)
         {
-            float sample = *it;
-            sample += noise_level * dist(rng);
-            sample = (sample > 1) ? 1 : (sample < -1) ? -1 : sample;
-            *it = sample;
+            std::minstd_rand rng;
+            std::uniform_real_distribution<float> dist(-1, 1);
+
+            for (auto it = signal.begin(); it != signal.end(); it++)
+            {
+                float sample = *it;
+                sample += noise_level * dist(rng);
+                sample = (sample > 1) ? 1 : (sample < -1) ? -1 : sample;
+                *it = sample;
+            }
         }
 
         return signal;
@@ -352,7 +349,7 @@ public:
                 }
 
                 // Simulate stall caused by flash write
-                for (int i = 0; i < kFlashWriteTime * kDecoderSampleRate; i++)
+                for (int i = 0; i < kFlashWriteTime * kSampleRate; i++)
                 {
                     if (!signal.size())
                     {
@@ -370,7 +367,8 @@ public:
 
         for (uint32_t i = 0; i < data.size(); i++)
         {
-            uint8_t expected = (i < test_data_.size()) ? test_data_[i] : kFillByte;
+            uint8_t expected = (i < test_data_.size()) ?
+                test_data_[i] : kFillByte;
             ASSERT_EQ(data[i], expected) << "at i = " << i;
         }
     }
@@ -378,9 +376,24 @@ public:
 
 TYPED_TEST_CASE(DecoderTest, ParamTypeList);
 
-TYPED_TEST(DecoderTest, Decode)
+TYPED_TEST(DecoderTest, Noisy)
 {
-    this->Decode(kResamplingRatio, 0.1f, 0.01f);
+    this->Decode(1.f, 0.1f, 0.01f);
+}
+
+TYPED_TEST(DecoderTest, Upsampled)
+{
+    this->Decode(1.05f, 1.f, 0.f);
+}
+
+TYPED_TEST(DecoderTest, Downsampled)
+{
+    this->Decode(0.95f, 1.f, 0.f);
+}
+
+TYPED_TEST(DecoderTest, Imperfect)
+{
+    this->Decode(0.98f, 0.5f, 0.01f);
 }
 
 }

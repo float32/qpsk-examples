@@ -13,7 +13,7 @@ class Encoding:
 
 def GenerateEncodings():
     symbol_duration = (6, 8, 12, 16)
-    packet_size = (52, 256, 1024)
-    num_packets = (1, 4, 13)
+    packet_size = (52, 256)
+    num_packets = (1, 4, 7)
     encodings = itertools.product(symbol_duration, packet_size, num_packets)
     return itertools.starmap(Encoding, encodings)
