@@ -110,12 +110,13 @@ inline T LoadAudio(std::string file_path)
 }
 
 template <typename T>
-inline T LoadAudio(int carrier_rate, int packet_size, int page_size)
+inline T LoadAudio(std::string bin_file_path,
+    int carrier_rate, int packet_size, int page_size)
 {
     T signal;
     std::stringstream ss;
-    ss << "python3 encoder.py -s 48000 -w 0.05 -t bin"
-        << " -i unit_tests/data/data.bin -o -"
+    ss << "python3 encoder.py -s 48000 -w 0.05 -t bin -o -"
+        << " -i " << bin_file_path
         << " -c " << carrier_rate
         << " -p " << packet_size
         << " -f " << page_size;

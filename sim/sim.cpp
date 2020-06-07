@@ -26,14 +26,15 @@
 namespace qpsk::sim
 {
 
-void SimQPSK(std::string vcd_file);
+void SimQPSK(std::string vcd_file, std::string bin_file);
 
 extern "C"
 int main(int argc, char* argv[])
 {
-    assert(argc > 1);
+    assert(argc > 2);
     auto vcd_file = std::string(argv[1]);
-    SimQPSK(vcd_file);
+    auto bin_file = std::string(argv[2]);
+    SimQPSK(vcd_file, bin_file);
 }
 
 }

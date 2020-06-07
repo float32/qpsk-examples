@@ -46,10 +46,10 @@ constexpr float kFlashWriteTime = 0.025f;
 
 using Signal = std::vector<float>;
 
-void SimQPSK(std::string vcd_file)
+void SimQPSK(std::string vcd_file, std::string bin_file)
 {
-    auto signal =
-        test::util::LoadAudio<Signal>(kSymbolRate, kPacketSize, kPageSize);
+    auto signal = test::util::LoadAudio<Signal>(bin_file,
+        kSymbolRate, kPacketSize, kPageSize);
 
     // Resample, attenuate, and add noise
     signal = test::util::Resample(signal, 1.02f);

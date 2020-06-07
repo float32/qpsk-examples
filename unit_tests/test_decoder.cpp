@@ -23,6 +23,7 @@
 #include <cmath>
 #include <deque>
 #include <tuple>
+#include <string>
 #include <vector>
 #include <cstdint>
 #include <type_traits>
@@ -193,9 +194,10 @@ public:
 
     static void SetUpTestCase()
     {
-        test_data_ = util::LoadBinary("unit_tests/data/data.bin");
-        test_audio_ =
-            util::LoadAudio<Signal>(kCarrierRate, kPacketSize, kPageSize);
+        std::string bin_file = "unit_tests/data/data.bin";
+        test_data_ = util::LoadBinary(bin_file);
+        test_audio_ = util::LoadAudio<Signal>(bin_file,
+            kCarrierRate, kPacketSize, kPageSize);
     }
 
     void SetUp() override
