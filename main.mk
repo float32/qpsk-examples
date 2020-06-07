@@ -5,7 +5,7 @@ TARGET_DIR := $(BUILD_DIR)/artifact
 # Targets
 # ------------------------------------------------------------------------------
 
-SUBMAKEFILES := test.mk
+SUBMAKEFILES := test.mk sim.mk
 
 .DEFAULT_GOAL := tests
 

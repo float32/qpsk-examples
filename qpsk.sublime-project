@@ -24,8 +24,8 @@
     "build_systems":
     [
         {
-            "name": "make",
-            "shell_cmd": "make -j\\$(nproc) tests",
+            "name": "test",
+            "shell_cmd": "make -j tests",
             "file_regex": "^\\s*([^:]+):(\\d+):(\\d+):\\s*(.+)$",
             "syntax": "Packages/Makefile/Make Output.sublime-syntax",
             "working_dir": "$project_path",
@@ -37,7 +37,25 @@
                 },
                 {
                     "name": "run",
-                    "shell_cmd": "make -j\\$(nproc) check",
+                    "shell_cmd": "make -j check",
+                },
+            ],
+        },
+        {
+            "name": "sim",
+            "shell_cmd": "make -j sim",
+            "file_regex": "^\\s*([^:]+):(\\d+):(\\d+):\\s*(.+)$",
+            "syntax": "Packages/Makefile/Make Output.sublime-syntax",
+            "working_dir": "$project_path",
+            "variants":
+            [
+                {
+                    "name": "clean",
+                    "shell_cmd": "make mostlyclean",
+                },
+                {
+                    "name": "run",
+                    "shell_cmd": "make run-sim",
                 },
             ],
         },

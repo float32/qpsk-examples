@@ -1,0 +1,86 @@
+[*]
+[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
+[*] Wed Apr 25 23:31:56 2018
+[*]
+[dumpfile] "~/repos/qpsk/build/artifact/sim-qpsk/sim-qpsk.vcd"
+[savefile] "~/repos/qpsk/sim/sim-qpsk.gtkw"
+[size] 2155 943
+[pos] -1 -1
+*-19.452715 3037 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] top.
+[treeopen] top.q.
+[treeopen] top.q.dm.
+[sst_width] 211
+[signals_width] 228
+[sst_expanded] 1
+[sst_vpaned_height] 275
+@2420
+^1 ~/repos/qpsk/sim/demodulator-state.txt
+top.q.\dm.state
+@40008420
+[fpshift_count] 16
+top.\q.in
+@20000
+-
+-
+-
+@40008420
+[fpshift_count] 16
+top.q.\dm.power
+@20000
+-
+@40008420
+[fpshift_count] 16
+top.q.dm.\pll.phase
+@20000
+-
+-
+-
+@40008420
+[fpshift_count] 16
+top.q.dm.\pll.ph_err
+@20000
+-
+@40008420
+[fpshift_count] 16
+[color] 2
+top.q.dm.\crfi.out
+@20000
+-
+@40008420
+[fpshift_count] 16
+[color] 2
+top.q.dm.\crfq.out
+@20000
+-
+@40008420
+[fpshift_count] 16
+top.q.dm.\pll.ph_inc
+@20000
+-
+-
+@40000420
+[fpshift_count] 16
+[color] 6
+top.q.\dm.dec_ph
+@24
+top.q.\dm.symbol
+@40008420
+[fpshift_count] 16
+top.q.dm.\corr.out
+@20000
+-
+@2420
+^2 ~/repos/qpsk/sim/decoder-state.txt
+top.\q.state
+@22
+top.q.\pkt.byte
+@28
+[color] 1
+top.q.\dm.decide
+[color] 6
+top.q.\dm.early
+[color] 6
+top.q.\dm.late
+[pattern_trace] 1
+[pattern_trace] 0
