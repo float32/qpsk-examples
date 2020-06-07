@@ -1,16 +1,11 @@
-#include <algorithm>
 #include <climits>
 #include <cstdint>
-#include <fstream>
-#include <sstream>
-#include <cassert>
-#include <string>
 #include <vector>
-#include <random>
-#include <cstdio>
 #include <cmath>
 
 #include "sim/vcd-writer/vcd_writer.h"
+#include "sim/vcd_var.h"
+#include "unit_tests/util.h"
 #include "decoder.h"
 
 namespace qpsk::sim
@@ -29,176 +24,15 @@ constexpr float kFlashWriteTime = 0.025f;
 
 using Signal = std::vector<float>;
 
-Signal LoadAudio(std::string file_path)
-{
-    std::ifstream wav_file;
-    wav_file.open(file_path, std::ios::in | std::ios::binary);
-        assert(wav_file.good());
-    wav_file.seekg(44);
-    Signal signal;
-    while (!wav_file.eof())
-    {
-        int16_t sample = (wav_file.get() & 0xFF);
-        sample |= (wav_file.get() << 8);
-        signal.push_back(sample / 32767.f);
-    }
-    wav_file.close();
-    return signal;
-}
-
-Signal LoadAudio(int carrier_rate, int packet_size, int page_size)
-{
-    Signal signal;
-    std::stringstream ss;
-    ss << "python3 encoder.py -s 48000 -w 0.05 -t bin"
-        << " -i unit_tests/data/data.bin -o -"
-        << " -c " << carrier_rate
-        << " -p " << packet_size
-        << " -f " << page_size;
-    std::string cmd = ss.str();
-    auto wav_file = popen(cmd.c_str(), "r");
-    fseek(wav_file, 44, SEEK_SET);
-    while (!feof(wav_file))
-    {
-        int16_t sample = (fgetc(wav_file) & 0xFF);
-        sample |= (fgetc(wav_file) << 8);
-        signal.push_back(sample / 32767.f);
-    }
-    pclose(wav_file);
-    return signal;
-}
-
-Signal Resample(Signal signal, double ratio)
-{
-    if (ratio != 1.0)
-    {
-        Signal resampled;
-        uint32_t length = floor(signal.size() * ratio);
-
-        for (uint32_t i = 0; i < length; i++)
-        {
-            double position = i / ratio;
-            uint32_t x0 = floor(position);
-            float y0 = signal[x0];
-            float y1 = signal[x0 + 1];
-            position = fmod(position, 1.0);
-            resampled.push_back(y0 + position * (y1 - y0));
-        }
-
-        return resampled;
-    }
-    else
-    {
-        return signal;
-    }
-}
-
-Signal Scale(Signal signal, float level)
-{
-    if (level != 1.f)
-    {
-        for (auto it = signal.begin(); it != signal.end(); it++)
-        {
-            *it *= level;
-        }
-    }
-
-    return signal;
-}
-
-Signal AddNoise(Signal signal, float noise_level)
-{
-    if (noise_level != 0.f)
-    {
-        std::minstd_rand rng;
-        std::uniform_real_distribution<float> dist(-1, 1);
-
-        for (auto it = signal.begin(); it != signal.end(); it++)
-        {
-            float sample = *it;
-            sample += noise_level * dist(rng);
-            sample = (sample > 1) ? 1 : (sample < -1) ? -1 : sample;
-            *it = sample;
-        }
-    }
-
-    return signal;
-}
-
-template <int width>
-class VCDIntegerVar
-{
-protected:
-    VCDWriter* vcd_;
-    VarPtr var_;
-
-public:
-    VCDIntegerVar(VCDWriter& vcd, std::string scope, std::string name)
-    {
-        vcd_ = &vcd;
-        var_ = vcd.register_var(scope, name, VariableType::integer, width);
-    }
-
-    template <typename T>
-    void change(TimeStamp t, T value)
-    {
-        std::stringstream ss;
-
-        for (uint32_t mask = 1 << (width - 1); mask > 0; mask >>= 1)
-        {
-            ss << ((value & mask) ? '1' : '0');
-        }
-
-        vcd_->change(var_, t, ss.str());
-    }
-};
-
-class VCDRealVar
-{
-protected:
-    VCDWriter* vcd_;
-    VarPtr var_;
-
-public:
-    VCDRealVar(VCDWriter& vcd, std::string scope, std::string name)
-    {
-        vcd_ = &vcd;
-        var_ = vcd.register_var(scope, name, VariableType::real);
-    }
-
-    template <typename T>
-    void change(TimeStamp t, T value)
-    {
-        std::stringstream ss;
-        ss << value;
-        vcd_->change(var_, t, ss.str());
-    }
-};
-
-template <int i_width, int q_width>
-class VCDFixedPointVar : public VCDIntegerVar<i_width + q_width>
-{
-protected:
-    using super = VCDIntegerVar<i_width + q_width>;
-    using super::VCDIntegerVar;
-
-public:
-    template <typename T>
-    void change(TimeStamp t, T value)
-    {
-        value = std::clamp<T>(value, INT_MIN >> q_width, INT_MAX >> q_width);
-        int fix = std::round(value * (1 << q_width));
-        super::change(t, fix);
-    }
-};
-
 void SimQPSK(std::string vcd_file)
 {
-    auto signal = LoadAudio(kSymbolRate, kPacketSize, kPageSize);
+    auto signal =
+        test::util::LoadAudio<Signal>(kSymbolRate, kPacketSize, kPageSize);
+
     // Resample, attenuate, and add noise
-    signal = Resample(signal, 1.02f);
-    signal = Scale(signal, 0.1f);
-    signal = AddNoise(signal, 0.01f);
+    signal = test::util::Resample(signal, 1.02f);
+    signal = test::util::Scale(signal, 0.1f);
+    signal = test::util::AddNoise(signal, 0.01f);
 
     VCDWriter vcd{vcd_file,
         makeVCDHeader(TimeScale::ONE, TimeScaleUnit::us, utils::now())};
