@@ -23,15 +23,12 @@
 #include <cmath>
 #include <deque>
 #include <tuple>
-#include <cstdio>
 #include <vector>
-#include <random>
-#include <string>
-#include <fstream>
-#include <sstream>
+#include <cstdint>
 #include <type_traits>
 #include <gtest/gtest.h>
 #include "decoder.h"
+#include "unit_tests/util.h"
 
 namespace qpsk::test::decoder
 {
@@ -194,120 +191,11 @@ public:
         }
     }
 
-    Signal Resample(Signal signal, double ratio)
-    {
-        if (ratio != 1.0)
-        {
-            Signal resampled;
-            uint32_t length = floor(signal.size() * ratio);
-
-            for (uint32_t i = 0; i < length; i++)
-            {
-                double position = i / ratio;
-                uint32_t x0 = floor(position);
-                float y0 = signal[x0];
-                float y1 = signal[x0 + 1];
-                position = fmod(position, 1.0);
-                resampled.push_back(y0 + position * (y1 - y0));
-            }
-
-            return resampled;
-        }
-        else
-        {
-            return signal;
-        }
-    }
-
-    Signal Scale(Signal signal, float level)
-    {
-        if (level != 1.f)
-        {
-            for (auto it = signal.begin(); it != signal.end(); it++)
-            {
-                *it *= level;
-            }
-        }
-
-        return signal;
-    }
-
-    Signal AddNoise(Signal signal, float noise_level)
-    {
-        if (noise_level != 0.f)
-        {
-            std::minstd_rand rng;
-            std::uniform_real_distribution<float> dist(-1, 1);
-
-            for (auto it = signal.begin(); it != signal.end(); it++)
-            {
-                float sample = *it;
-                sample += noise_level * dist(rng);
-                sample = (sample > 1) ? 1 : (sample < -1) ? -1 : sample;
-                *it = sample;
-            }
-        }
-
-        return signal;
-    }
-
-    static Signal LoadAudio(std::string file_path)
-    {
-        std::ifstream wav_file;
-        wav_file.open(file_path, std::ios::in | std::ios::binary);
-        assert(wav_file.good());
-        wav_file.seekg(44);
-        Signal signal;
-        while (!wav_file.eof())
-        {
-            int16_t sample = (wav_file.get() & 0xFF);
-            sample |= (wav_file.get() << 8);
-            signal.push_back(sample / 32767.f);
-        }
-        wav_file.close();
-        return signal;
-    }
-
-    static Signal LoadAudio(int carrier_rate, int packet_size, int page_size)
-    {
-        Signal signal;
-        std::stringstream ss;
-        ss << "python3 encoder.py -s 48000 -w 0.05 -t bin"
-            << " -i unit_tests/data/data.bin -o -"
-            << " -c " << carrier_rate
-            << " -p " << packet_size
-            << " -f " << page_size;
-        std::string cmd = ss.str();
-        auto wav_file = popen(cmd.c_str(), "r");
-        fseek(wav_file, 44, SEEK_SET);
-        while (!feof(wav_file))
-        {
-            int16_t sample = (fgetc(wav_file) & 0xFF);
-            sample |= (fgetc(wav_file) << 8);
-            signal.push_back(sample / 32767.f);
-        }
-        pclose(wav_file);
-        return signal;
-    }
-
-    static std::vector<uint8_t> LoadBinary(std::string file_path)
-    {
-        std::ifstream bin_file;
-        bin_file.open(file_path, std::ios::in | std::ios::binary);
-        assert(bin_file.good());
-        std::vector<uint8_t> bin_data;
-        while (!bin_file.eof())
-        {
-            bin_data.push_back(bin_file.get());
-        }
-        bin_file.close();
-        return bin_data;
-    }
-
     static void SetUpTestCase()
     {
-        test_data_ = LoadBinary("unit_tests/data/data.bin");
-        test_audio_ = LoadAudio(kCarrierRate, kPacketSize, kPageSize);
+        test_data_ = util::LoadBinary("unit_tests/data/data.bin");
+        test_audio_ =
+            util::LoadAudio<Signal>(kCarrierRate, kPacketSize, kPageSize);
     }
 
     void SetUp() override
@@ -319,9 +207,9 @@ public:
     {
         Signal signal = test_audio_;
         // Resample, attenuate, and add noise
-        signal = Resample(signal, resampling_ratio);
-        signal = Scale(signal, signal_level);
-        signal = AddNoise(signal, noise_level);
+        signal = util::Resample(signal, resampling_ratio);
+        signal = util::Scale(signal, signal_level);
+        signal = util::AddNoise(signal, noise_level);
 
         // Begin decoding
         std::vector<uint8_t> data;
