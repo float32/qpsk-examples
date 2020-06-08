@@ -51,7 +51,7 @@ using Signal = std::vector<float>;
 inline void SimQPSK(std::string vcd_file, std::string bin_file)
 {
     auto signal = test::util::LoadAudio<Signal>(bin_file,
-        kSymbolRate, kPacketSize, kPageSize);
+        kSymbolRate, kPacketSize, kPageSize, kFlashWriteTime * 2);
 
     // Resample, attenuate, and add noise
     signal = test::util::Resample(signal, 1.02f);
@@ -91,12 +91,25 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file)
     qpsk.Init(kCRCSeed);
 
     TimeStamp time = 0;
+    int flash_write_delay = 0;
 
     // Begin decoding
     for (auto sample : signal)
     {
         qpsk.Push(sample);
-        auto result = qpsk.Receive();
+
+        if (flash_write_delay == 0)
+        {
+            auto result = qpsk.Receive();
+            if (result == RESULT_PAGE_COMPLETE)
+            {
+                flash_write_delay = kSampleRate * kFlashWriteTime;
+            }
+        }
+        else
+        {
+            flash_write_delay--;
+        }
 
         v_q_in.change(time, sample);
         v_q_state.change(time, qpsk.state());
