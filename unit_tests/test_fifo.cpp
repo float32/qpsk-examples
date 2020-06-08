@@ -69,7 +69,7 @@ TYPED_TEST(FifoTest, FullPush)
 {
     for (uint32_t i = 0; i < this->kSize; i++)
     {
-        EXPECT_TRUE(this->fifo_.Push(kPaint));
+        ASSERT_TRUE(this->fifo_.Push(kPaint));
     }
 
     EXPECT_FALSE(this->fifo_.Push(kPaint));
@@ -106,10 +106,129 @@ TYPED_TEST(FifoTest, PushPeekPop)
     {
         uint32_t peeked;
         uint32_t popped;
-        EXPECT_TRUE(this->fifo_.Peek(peeked));
-        EXPECT_EQ(peeked, kPaint + i);
-        EXPECT_TRUE(this->fifo_.Pop(popped));
-        EXPECT_EQ(popped, kPaint + i);
+        ASSERT_TRUE(this->fifo_.Peek(peeked));
+        ASSERT_EQ(peeked, kPaint + i);
+        ASSERT_TRUE(this->fifo_.Pop(popped));
+        ASSERT_EQ(popped, kPaint + i);
+        ASSERT_EQ(this->fifo_.Available(), this->kSize - i - 1);
+    }
+
+    EXPECT_TRUE(this->fifo_.Empty());
+}
+
+template <typename T>
+class RingBufferTest : public ::testing::Test
+{
+protected:
+    static constexpr uint32_t kSize = T::value;
+    RingBuffer<uint32_t, kSize> fifo_;
+
+    void SetUp() override
+    {
+        fifo_.Init();
+    }
+};
+
+TYPED_TEST_CASE(RingBufferTest, FifoSizes);
+
+TYPED_TEST(RingBufferTest, Init)
+{
+    EXPECT_EQ(this->fifo_.Empty(), true);
+    EXPECT_EQ(this->fifo_.Full(), false);
+    EXPECT_EQ(this->fifo_.Available(), 0);
+}
+
+TYPED_TEST(RingBufferTest, EmptyPeekPop)
+{
+    uint32_t item;
+    EXPECT_FALSE(this->fifo_.Peek(item));
+    EXPECT_FALSE(this->fifo_.Pop(item));
+}
+
+TYPED_TEST(RingBufferTest, FullPush)
+{
+    for (uint32_t i = 0; i < this->kSize * 10; i++)
+    {
+        ASSERT_TRUE(this->fifo_.Push(kPaint));
+    }
+}
+
+TYPED_TEST(RingBufferTest, FillAndFlush)
+{
+    for (uint32_t i = 0; i < this->kSize; i++)
+    {
+        ASSERT_FALSE(this->fifo_.Full());
+        ASSERT_TRUE(this->fifo_.Push(kPaint));
+    }
+
+    EXPECT_FALSE(this->fifo_.Empty());
+    EXPECT_TRUE(this->fifo_.Full());
+    EXPECT_EQ(this->fifo_.Available(), this->kSize);
+
+    this->fifo_.Flush();
+
+    EXPECT_TRUE(this->fifo_.Empty());
+    EXPECT_FALSE(this->fifo_.Full());
+    EXPECT_EQ(this->fifo_.Available(), 0);
+}
+
+TYPED_TEST(RingBufferTest, Overfill)
+{
+    for (uint32_t overfill_by : {1, 15, 128, 1000, 4096, 5000})
+    {
+        for (uint32_t i = 0; i < this->kSize; i++)
+        {
+            ASSERT_FALSE(this->fifo_.Full());
+            ASSERT_TRUE(this->fifo_.Push(kPaint + i));
+        }
+
+        EXPECT_FALSE(this->fifo_.Empty());
+        EXPECT_TRUE(this->fifo_.Full());
+        EXPECT_EQ(this->fifo_.Available(), this->kSize);
+
+        for (uint32_t i = 0; i < overfill_by; i++)
+        {
+            ASSERT_FALSE(this->fifo_.Empty());
+            ASSERT_TRUE(this->fifo_.Full());
+            ASSERT_TRUE(this->fifo_.Push(kPaint + this->kSize + i));
+            ASSERT_EQ(this->fifo_.Available(), this->kSize);
+        }
+
+        for (uint32_t i = 0; i < this->kSize; i++)
+        {
+            uint32_t peeked;
+            uint32_t popped;
+            ASSERT_TRUE(this->fifo_.Peek(peeked));
+            ASSERT_EQ(peeked, kPaint + i + overfill_by);
+            ASSERT_TRUE(this->fifo_.Pop(popped));
+            ASSERT_EQ(popped, kPaint + i + overfill_by);
+            ASSERT_EQ(this->fifo_.Available(), this->kSize - i - 1);
+        }
+
+        this->fifo_.Flush();
+
+        EXPECT_TRUE(this->fifo_.Empty());
+        EXPECT_FALSE(this->fifo_.Full());
+        EXPECT_EQ(this->fifo_.Available(), 0);
+    }
+}
+
+TYPED_TEST(RingBufferTest, PushPeekPop)
+{
+    for (uint32_t i = 0; i < this->kSize; i++)
+    {
+        ASSERT_TRUE(this->fifo_.Push(kPaint + i));
+        ASSERT_EQ(this->fifo_.Available(), i + 1);
+    }
+
+    for (uint32_t i = 0; i < this->kSize; i++)
+    {
+        uint32_t peeked;
+        uint32_t popped;
+        ASSERT_TRUE(this->fifo_.Peek(peeked));
+        ASSERT_EQ(peeked, kPaint + i);
+        ASSERT_TRUE(this->fifo_.Pop(popped));
+        ASSERT_EQ(popped, kPaint + i);
         ASSERT_EQ(this->fifo_.Available(), this->kSize - i - 1);
     }
 
