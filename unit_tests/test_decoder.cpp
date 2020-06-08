@@ -21,7 +21,6 @@
 // SOFTWARE.
 
 #include <cmath>
-#include <deque>
 #include <tuple>
 #include <string>
 #include <vector>
@@ -84,7 +83,7 @@ template <typename T>
 class DecoderTest : public ::testing::Test
 {
 public:
-    using Signal = std::deque<float>;
+    using Signal = std::vector<float>;
     static inline Signal test_audio_;
     static inline std::vector<uint8_t> test_data_;
 
@@ -213,42 +212,39 @@ public:
         signal = util::Scale(signal, signal_level);
         signal = util::AddNoise(signal, noise_level);
 
+        int flash_write_delay = 0;
+
         // Begin decoding
         std::vector<uint8_t> data;
-        while (signal.size())
+        for (auto sample : signal)
         {
-            float sample = signal.front();
-            signal.pop_front();
             qpsk_.Push(sample);
-            auto result = qpsk_.Receive();
 
-            if (result == RESULT_ERROR)
+            if (flash_write_delay == 0)
             {
-                ReceiveError(qpsk_.GetError());
-                FAIL();
-            }
-            else if (result == RESULT_PAGE_COMPLETE)
-            {
-                uint32_t* page = qpsk_.GetPage();
-                for (uint32_t i = 0; i < kPageSize / 4; i++)
+                auto result = qpsk_.Receive();
+
+                if (result == RESULT_ERROR)
                 {
-                    data.push_back(page[i] >>  0);
-                    data.push_back(page[i] >>  8);
-                    data.push_back(page[i] >> 16);
-                    data.push_back(page[i] >> 24);
+                    ReceiveError(qpsk_.GetError());
+                    FAIL();
                 }
-
-                // Simulate stall caused by flash write
-                for (int i = 0; i < kFlashWriteTime * kSampleRate; i++)
+                else if (result == RESULT_PAGE_COMPLETE)
                 {
-                    if (!signal.size())
+                    uint32_t* page = qpsk_.GetPage();
+                    for (uint32_t i = 0; i < kPageSize / 4; i++)
                     {
-                        break;
+                        data.push_back(page[i] >>  0);
+                        data.push_back(page[i] >>  8);
+                        data.push_back(page[i] >> 16);
+                        data.push_back(page[i] >> 24);
                     }
-                    float sample = signal.front();
-                    signal.pop_front();
-                    qpsk_.Push(sample);
+                    flash_write_delay = kSampleRate * kFlashWriteTime;
                 }
+            }
+            else
+            {
+                flash_write_delay--;
             }
         }
 
