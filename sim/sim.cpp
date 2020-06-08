@@ -22,11 +22,10 @@
 
 #include <cassert>
 #include <string>
+#include "sim/sim_qpsk.h"
 
 namespace qpsk::sim
 {
-
-void SimQPSK(std::string vcd_file, std::string bin_file);
 
 extern "C"
 int main(int argc, char* argv[])

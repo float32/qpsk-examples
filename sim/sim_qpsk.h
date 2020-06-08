@@ -20,6 +20,8 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#pragma once
+
 #include <climits>
 #include <cstdint>
 #include <vector>
@@ -46,7 +48,7 @@ constexpr float kFlashWriteTime = 0.025f;
 
 using Signal = std::vector<float>;
 
-void SimQPSK(std::string vcd_file, std::string bin_file)
+inline void SimQPSK(std::string vcd_file, std::string bin_file)
 {
     auto signal = test::util::LoadAudio<Signal>(bin_file,
         kSymbolRate, kPacketSize, kPageSize);
