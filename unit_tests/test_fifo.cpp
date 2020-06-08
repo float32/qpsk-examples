@@ -31,8 +31,8 @@ namespace qpsk::test::fifo
 constexpr uint32_t kPaint = 0xDEADBEEF;
 
 using FifoSizes = ::testing::Types<
-    std::integral_constant<uint32_t, 128>,
-    std::integral_constant<uint32_t, 37>,
+    std::integral_constant<uint32_t, 4096>,
+    std::integral_constant<uint32_t, 16>,
     std::integral_constant<uint32_t, 2>,
     std::integral_constant<uint32_t, 1>>;
 
