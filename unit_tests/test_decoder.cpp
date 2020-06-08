@@ -106,15 +106,16 @@ public:
         if (error == ERROR_SYNC)
         {
             printf("  Recent symbols   :");
+            uint8_t symbol;
 
             while (qpsk_.SymbolsAvailable() > 16)
             {
-                qpsk_.PopSymbol();
+                qpsk_.PopSymbol(symbol);
             }
 
-            while (qpsk_.SymbolsAvailable())
+            while (qpsk_.PopSymbol(symbol))
             {
-                printf(" %u", qpsk_.PopSymbol());
+                printf(" %u", symbol);
             }
 
             printf("\n");

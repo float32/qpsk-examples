@@ -58,12 +58,29 @@ TYPED_TEST(FifoTest, Init)
     EXPECT_EQ(this->fifo_.Available(), 0);
 }
 
+TYPED_TEST(FifoTest, EmptyPeekPop)
+{
+    uint32_t item;
+    EXPECT_FALSE(this->fifo_.Peek(item));
+    EXPECT_FALSE(this->fifo_.Pop(item));
+}
+
+TYPED_TEST(FifoTest, FullPush)
+{
+    for (uint32_t i = 0; i < this->kSize; i++)
+    {
+        EXPECT_TRUE(this->fifo_.Push(kPaint));
+    }
+
+    EXPECT_FALSE(this->fifo_.Push(kPaint));
+}
+
 TYPED_TEST(FifoTest, FillAndFlush)
 {
     for (uint32_t i = 0; i < this->kSize; i++)
     {
         ASSERT_FALSE(this->fifo_.Full());
-        this->fifo_.Push(kPaint);
+        ASSERT_TRUE(this->fifo_.Push(kPaint));
     }
 
     EXPECT_FALSE(this->fifo_.Empty());
@@ -81,14 +98,18 @@ TYPED_TEST(FifoTest, PushPeekPop)
 {
     for (uint32_t i = 0; i < this->kSize; i++)
     {
-        this->fifo_.Push(kPaint + i);
+        ASSERT_TRUE(this->fifo_.Push(kPaint + i));
         ASSERT_EQ(this->fifo_.Available(), i + 1);
     }
 
     for (uint32_t i = 0; i < this->kSize; i++)
     {
-        EXPECT_EQ(this->fifo_.Peek(), kPaint + i);
-        EXPECT_EQ(this->fifo_.Pop(), kPaint + i);
+        uint32_t peeked;
+        uint32_t popped;
+        EXPECT_TRUE(this->fifo_.Peek(peeked));
+        EXPECT_EQ(peeked, kPaint + i);
+        EXPECT_TRUE(this->fifo_.Pop(popped));
+        EXPECT_EQ(popped, kPaint + i);
         ASSERT_EQ(this->fifo_.Available(), this->kSize - i - 1);
     }
 
