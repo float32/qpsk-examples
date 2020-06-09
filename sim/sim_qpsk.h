@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <stdexcept>
+#include <iostream>
 #include <climits>
 #include <cstdint>
 #include <vector>
@@ -50,6 +52,9 @@ using Signal = std::vector<float>;
 
 inline void SimQPSK(std::string vcd_file, std::string bin_file)
 {
+    auto expected_data = test::util::LoadBinary(bin_file);
+    decltype(expected_data) decoded_data;
+
     auto signal = test::util::LoadAudio<Signal>(bin_file,
         kSymbolRate, kPacketSize, kPageSize, kFlashWriteTime * 2);
 
@@ -103,6 +108,14 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file)
             auto result = qpsk.Receive();
             if (result == RESULT_PAGE_COMPLETE)
             {
+                uint32_t* page = qpsk.GetPage();
+                for (uint32_t i = 0; i < kPageSize / 4; i++)
+                {
+                    decoded_data.push_back(page[i] >>  0);
+                    decoded_data.push_back(page[i] >>  8);
+                    decoded_data.push_back(page[i] >> 16);
+                    decoded_data.push_back(page[i] >> 24);
+                }
                 flash_write_delay = kSampleRate * kFlashWriteTime;
             }
         }
@@ -131,6 +144,21 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file)
         v_corr_out.change(time, qpsk.Correlation());
 
         time += 1000000 / kSampleRate;
+    }
+
+    if (decoded_data.size() > expected_data.size())
+    {
+        expected_data.resize(decoded_data.size(), kFillByte);
+    }
+
+    if (decoded_data == expected_data)
+    {
+        std::cout << "Success!" << std::endl;
+    }
+    else
+    {
+        std::cerr << "Failure!" << std::endl;
+        throw std::runtime_error("Decoded incorrect data");
     }
 }
 
