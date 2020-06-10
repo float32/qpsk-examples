@@ -113,17 +113,19 @@ inline T LoadAudio(std::string file_path)
 
 template <typename T>
 inline T LoadAudio(std::string bin_file_path,
-    int carrier_rate, int packet_size, int page_size,
+    int symbol_rate, int packet_size, int page_size,
     float write_time = 0.05f)
 {
     T signal;
     std::stringstream ss;
     ss << "python3 encoder.py -s 48000 -t bin -o -"
         << " -i " << bin_file_path
-        << " -c " << carrier_rate
+        << " -y " << symbol_rate
         << " -p " << packet_size
-        << " -f " << page_size
-        << " -w " << write_time;
+        << " -b " << page_size
+        << " -w " << (write_time / 2 * 1000)
+        << " -f " << page_size << ":" << (write_time / 2 * 1000)
+        << " -a 0";
     std::string cmd = ss.str();
     auto wav_file = popen(cmd.c_str(), "r");
     fseek(wav_file, 44, SEEK_SET);

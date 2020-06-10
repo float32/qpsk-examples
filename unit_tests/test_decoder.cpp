@@ -92,7 +92,7 @@ public:
     static constexpr int kPageSize       = std::tuple_element_t<2, T>::value;
     Decoder<kSymbolDuration, kPacketSize, kPageSize, 256> qpsk_;
 
-    static constexpr int kCarrierRate = kSampleRate / kSymbolDuration;
+    static constexpr int kSymbolRate = kSampleRate / kSymbolDuration;
 
     void DebugError(Error error)
     {
@@ -197,7 +197,7 @@ public:
         std::string bin_file = "unit_tests/data/data.bin";
         test_data_ = util::LoadBinary(bin_file);
         test_audio_ = util::LoadAudio<Signal>(bin_file,
-            kCarrierRate, kPacketSize, kPageSize);
+            kSymbolRate, kPacketSize, kPageSize);
     }
 
     void SetUp() override

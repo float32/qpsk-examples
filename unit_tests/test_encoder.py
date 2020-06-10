@@ -46,10 +46,12 @@ class TestQPSKEncoder(unittest.TestCase):
         cls._hex_data = codecs.encode(hex_data.getvalue(), encoding='ascii')
         cls._args = ['python3', 'encoder.py',
             '-s', '48000',
-            '-c', '6000',
-            '-f', '1024',
-            '-p', '256',
-            '-w', '0.05']
+            '-y', '6000',
+            '-b', '1K',
+            '-f', '1K:40',
+            '-a', '0',
+            '-w', '10',
+            '-p', '256']
 
     def test_bin(self):
         with tempfile.NamedTemporaryFile() as binfile:
