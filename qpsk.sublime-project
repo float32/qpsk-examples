@@ -59,5 +59,23 @@
                 },
             ],
         },
+        {
+            "name": "example",
+            "shell_cmd": "make -j example",
+            "file_regex": "^\\s*([^:]+):(\\d+):(\\d+):\\s*(.+)$",
+            "syntax": "Packages/Makefile/Make Output.sublime-syntax",
+            "working_dir": "$project_path",
+            "variants":
+            [
+                {
+                    "name": "clean",
+                    "shell_cmd": "make mostlyclean",
+                },
+                {
+                    "name": "run",
+                    "shell_cmd": "make -j load-example",
+                },
+            ],
+        },
     ]
 }
