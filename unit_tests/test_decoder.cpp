@@ -45,11 +45,16 @@ using ParamType = std::tuple<
     std::integral_constant<int, C>>;
 using ParamTypeList = ::testing::Types<
     /*[[[cog
-    from data.encodings import GenerateEncodings
+    import itertools
     lines = []
-    for e in GenerateEncodings():
+    symbol_duration = (6, 8, 12, 16)
+    packet_size = (52, 256)
+    num_packets = (1, 4, 7)
+    encodings = itertools.product(symbol_duration, packet_size, num_packets)
+    for (symbol_duration, packet_size, num_packets) in encodings:
+        page_size = packet_size * num_packets
         lines.append('ParamType<{:2}, {:4}, {:5}>'
-            .format(e.symbol_duration, e.packet_size, e.page_size))
+            .format(symbol_duration, packet_size, page_size))
     cog.outl(',\n'.join(lines))
     ]]]*/
     ParamType< 6,   52,    52>,
@@ -266,6 +271,11 @@ TYPED_TEST_CASE(DecoderTest, ParamTypeList);
 TYPED_TEST(DecoderTest, Noisy)
 {
     this->Decode(1.f, 0.1f, 0.01f);
+}
+
+TYPED_TEST(DecoderTest, Inverted)
+{
+    this->Decode(1.f, -1.f, 0.f);
 }
 
 TYPED_TEST(DecoderTest, Upsampled)
