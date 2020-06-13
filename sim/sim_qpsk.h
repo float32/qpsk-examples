@@ -24,6 +24,7 @@
 
 #include <stdexcept>
 #include <iostream>
+#include <fstream>
 #include <climits>
 #include <cstdint>
 #include <vector>
@@ -50,7 +51,8 @@ constexpr float kFlashWriteTime = 0.025f;
 
 using Signal = std::vector<float>;
 
-inline void SimQPSK(std::string vcd_file, std::string bin_file)
+inline void SimQPSK(std::string vcd_file, std::string bin_file,
+    std::string decode_file = "")
 {
     auto expected_data = test::util::LoadBinary(bin_file);
     decltype(expected_data) decoded_data;
@@ -118,6 +120,10 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file)
                 }
                 flash_write_delay = kSampleRate * kFlashWriteTime;
             }
+            else if (result == RESULT_ERROR)
+            {
+                throw std::runtime_error("Error during decoding");
+            }
         }
         else
         {
@@ -151,13 +157,22 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file)
         expected_data.resize(decoded_data.size(), kFillByte);
     }
 
+    if (decode_file != "")
+    {
+        std::ofstream out;
+        out.open(decode_file, std::ios::out | std::ios::binary);
+        assert(out.good());
+        auto data = reinterpret_cast<char*>(decoded_data.data());
+        out.write(data, decoded_data.size());
+        out.close();
+    }
+
     if (decoded_data == expected_data)
     {
         std::cout << "Success!" << std::endl;
     }
     else
     {
-        std::cerr << "Failure!" << std::endl;
         throw std::runtime_error("Decoded incorrect data");
     }
 }
