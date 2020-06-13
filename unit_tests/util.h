@@ -101,10 +101,14 @@ inline T LoadAudio(std::string file_path)
     assert(wav_file.good());
     wav_file.seekg(44);
     T signal;
-    while (!wav_file.eof())
+    for (;;)
     {
         int16_t sample = (wav_file.get() & 0xFF);
         sample |= (wav_file.get() << 8);
+        if (wav_file.eof())
+        {
+            break;
+        }
         signal.push_back(sample / 32767.f);
     }
     wav_file.close();
@@ -129,10 +133,14 @@ inline T LoadAudio(std::string bin_file_path,
     std::string cmd = ss.str();
     auto wav_file = popen(cmd.c_str(), "r");
     fseek(wav_file, 44, SEEK_SET);
-    while (!feof(wav_file))
+    for (;;)
     {
         int16_t sample = (fgetc(wav_file) & 0xFF);
         sample |= (fgetc(wav_file) << 8);
+        if (feof(wav_file))
+        {
+            break;
+        }
         signal.push_back(sample / 32767.f);
     }
     pclose(wav_file);
@@ -145,9 +153,14 @@ inline std::vector<uint8_t> LoadBinary(std::string file_path)
     bin_file.open(file_path, std::ios::in | std::ios::binary);
     assert(bin_file.good());
     std::vector<uint8_t> bin_data;
-    while (!bin_file.eof())
+    for (;;)
     {
-        bin_data.push_back(bin_file.get());
+        uint32_t byte = bin_file.get();
+        if (bin_file.eof())
+        {
+            break;
+        }
+        bin_data.push_back(byte);
     }
     bin_file.close();
     return bin_data;
