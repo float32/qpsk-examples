@@ -67,6 +67,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
 
     VCDWriter vcd{vcd_file,
         makeVCDHeader(TimeScale::ONE, TimeScaleUnit::us, utils::now())};
+    VCDIntegerVar<1> v_time_extend(vcd, "top", "time_extend");
 
     // Decoder vars
     VCDIntegerVar<4> v_q_state(vcd, "top", "q.state");
@@ -152,6 +153,8 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
 
         time += 1000000 / kSampleRate;
     }
+
+    v_time_extend.change(time, 0);
 
     vcd.flush();
 
