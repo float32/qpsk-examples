@@ -101,13 +101,14 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     int flash_write_delay = 0;
 
     // Begin decoding
+    Result result;
     for (auto sample : signal)
     {
         qpsk.Push(sample);
 
         if (flash_write_delay == 0)
         {
-            auto result = qpsk.Receive();
+            result = qpsk.Receive();
             if (result == RESULT_PAGE_COMPLETE)
             {
                 uint32_t* page = qpsk.GetPage();
@@ -122,7 +123,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
             }
             else if (result == RESULT_ERROR)
             {
-                throw std::runtime_error("Error during decoding");
+                qpsk.Abort();
             }
         }
         else
@@ -152,6 +153,8 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
         time += 1000000 / kSampleRate;
     }
 
+    vcd.flush();
+
     if (decoded_data.size() > expected_data.size())
     {
         expected_data.resize(decoded_data.size(), kFillByte);
@@ -167,7 +170,11 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
         out.close();
     }
 
-    if (decoded_data == expected_data)
+    if (result == RESULT_ERROR)
+    {
+        throw std::runtime_error("Error during decoding");
+    }
+    else if (decoded_data == expected_data)
     {
         std::cout << "Success!" << std::endl;
     }
