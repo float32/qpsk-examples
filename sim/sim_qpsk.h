@@ -41,9 +41,9 @@ namespace qpsk::sim
 using namespace vcd;
 
 constexpr uint32_t kSampleRate = 48000;
-constexpr uint32_t kSymbolRate = 6000;
-constexpr uint32_t kPageSize = 1024;
+constexpr uint32_t kSymbolRate = 8000;
 constexpr uint32_t kPacketSize = 256;
+constexpr uint32_t kPageSize = kPacketSize * 4;
 constexpr uint32_t kCRCSeed = 0;
 constexpr uint32_t kSamplesPerSymbol = kSampleRate / kSymbolRate;
 constexpr uint8_t kFillByte = 0xFF;
