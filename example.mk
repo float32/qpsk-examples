@@ -1,4 +1,10 @@
 STACK_SIZE := 256
+BOOTLOADER_SIZE := 0x4000
+SAMPLE_RATE := 48000
+SYMBOL_RATE := 8000
+PACKET_SIZE := 256
+BLOCK_SIZE := 0x4000
+CRC_SEED := 420
 
 TARGET := example.elf
 SOURCES := example/*.cpp example/hal/*.c
@@ -13,6 +19,12 @@ TGT_DEFS := \
 	USE_FULL_ASSERT \
 	USE_FULL_LL_DRIVER \
 	STACK_SIZE=$(STACK_SIZE) \
+	BOOTLOADER_SIZE=$(BOOTLOADER_SIZE) \
+	SAMPLE_RATE=$(SAMPLE_RATE) \
+	SYMBOL_RATE=$(SYMBOL_RATE) \
+	PACKET_SIZE=$(PACKET_SIZE) \
+	BLOCK_SIZE=$(BLOCK_SIZE) \
+	CRC_SEED=$(CRC_SEED) \
 
 ARCHFLAGS := \
 	-mthumb \
@@ -47,6 +59,7 @@ TGT_LDFLAGS  := $(ARCHFLAGS) \
 	-specs=nano.specs \
 	-T$(LD_SCRIPT) \
 	-Wl,--defsym,STACK_SIZE=$(STACK_SIZE) \
+	-Wl,--defsym,BOOTLOADER_SIZE=$(BOOTLOADER_SIZE) \
 
 .PHONY: example
 example: $(TARGET_DIR)/$(TARGET)
@@ -56,6 +69,22 @@ OPENOCD_CMD := openocd -c "debug_level 1" -f board/stm32f4discovery.cfg
 .PHONY: load-example
 load-example: $(TARGET_DIR)/$(TARGET)
 	$(OPENOCD_CMD) -c "program $< verify reset exit"
+
+WAV_FILE := $(TARGET_DIR)/data.wav
+
+.PHONY: wav
+wav: example/data.bin | $(TARGET_DIR)
+	python3 encoder.py -s $(SAMPLE_RATE) -y $(SYMBOL_RATE) -b $(BLOCK_SIZE) \
+		-w 410 -f 16K:500:4 64K:1100:1 128K:2000:7 -x 0x08000000 \
+		-a +$(BOOTLOADER_SIZE) -p $(PACKET_SIZE) -e $(CRC_SEED) \
+		-i $< -o $(WAV_FILE)
+
+TGT_POSTCLEAN := $(RM) $(WAV_FILE)
+
+.PHONY: verify
+verify:
+	$(OPENOCD_CMD) -c init \
+		-c "flash verify_bank 0 example/data.bin $(BOOTLOADER_SIZE)" -c exit
 
 .PHONY: erase
 erase:

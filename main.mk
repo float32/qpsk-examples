@@ -1,9 +1,8 @@
 BUILD_DIR := build
 TARGET_DIR := $(BUILD_DIR)/artifact
 
-# ------------------------------------------------------------------------------
-# Targets
-# ------------------------------------------------------------------------------
+$(TARGET_DIR):
+	mkdir -p $@
 
 SUBMAKEFILES := test.mk sim.mk example.mk
 

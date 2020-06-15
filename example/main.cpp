@@ -5,11 +5,24 @@
 #include "stm32f4xx_ll_tim.h"
 #include "stm32f4xx_ll_gpio.h"
 #include "stm32f4xx_ll_adc.h"
+#include "decoder.h"
 
-constexpr uint32_t kRedLedPin    = GPIO_PIN_14;
-constexpr uint32_t kGreenLedPin  = GPIO_PIN_12;
-constexpr uint32_t kOrangeLedPin = GPIO_PIN_13;
-constexpr uint32_t kBlueLedPin   = GPIO_PIN_15;
+constexpr uint32_t kAppStartAddress = FLASH_BASE + BOOTLOADER_SIZE;
+
+constexpr uint32_t kRedLEDPin    = GPIO_PIN_14;
+constexpr uint32_t kGreenLEDPin  = GPIO_PIN_12;
+constexpr uint32_t kOrangeLEDPin = GPIO_PIN_13;
+constexpr uint32_t kBlueLEDPin   = GPIO_PIN_15;
+constexpr uint32_t kProfilingPin = GPIO_PIN_11;
+constexpr uint32_t kSwitchPin    = GPIO_PIN_0;
+
+static_assert(SAMPLE_RATE % SYMBOL_RATE == 0);
+constexpr uint32_t kSamplesPerSymbol = SAMPLE_RATE / SYMBOL_RATE;
+constexpr uint32_t kPacketSize = PACKET_SIZE;
+constexpr uint32_t kBlockSize = BLOCK_SIZE;
+constexpr uint32_t kCRCSeed = CRC_SEED;
+
+qpsk::Decoder<kSamplesPerSymbol, kPacketSize, kBlockSize> decoder;
 
 #ifdef USE_FULL_ASSERT
 extern "C"
@@ -19,7 +32,7 @@ void assert_failed(
 {
     for (;;)
     {
-        LL_GPIO_TogglePin(GPIOD, kRedLedPin);
+        LL_GPIO_TogglePin(GPIOD, kRedLEDPin);
         HAL_Delay(100);
     }
 }
@@ -32,17 +45,21 @@ void SysTick_Handler(void)
 
 void ADC_IRQHandler(void)
 {
-    LL_ADC_ClearFlag_EOCS(ADC1);
-    LL_GPIO_TogglePin(GPIOD, kBlueLedPin);
+    int16_t data = LL_ADC_REG_ReadConversionData12(ADC1);
+    float sample = (data - 0x800) / 2048.f;
+    decoder.Push(sample);
 }
 
-void InitLEDs(void)
+void InitOutputPins(void)
 {
     __HAL_RCC_GPIOD_CLK_ENABLE();
 
+    auto pins = kRedLEDPin | kGreenLEDPin | kOrangeLEDPin | kBlueLEDPin |
+        kProfilingPin;
+
     GPIO_InitTypeDef gpio_init =
     {
-        .Pin       = kRedLedPin | kGreenLedPin | kOrangeLedPin | kBlueLedPin,
+        .Pin       = pins,
         .Mode      = GPIO_MODE_OUTPUT_PP,
         .Pull      = GPIO_NOPULL,
         .Speed     = GPIO_SPEED_FREQ_LOW,
@@ -50,6 +67,22 @@ void InitLEDs(void)
     };
 
     HAL_GPIO_Init(GPIOD, &gpio_init);
+}
+
+void InitSwitch(void)
+{
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+
+    GPIO_InitTypeDef gpio_init =
+    {
+        .Pin       = kSwitchPin,
+        .Mode      = GPIO_MODE_INPUT,
+        .Pull      = GPIO_PULLDOWN,
+        .Speed     = GPIO_SPEED_FREQ_LOW,
+        .Alternate = 0,
+    };
+
+    HAL_GPIO_Init(GPIOA, &gpio_init);
 }
 
 void InitPowerAndClock(void)
@@ -160,25 +193,167 @@ void InitADC(void)
     HAL_NVIC_EnableIRQ(ADC_IRQn);
 }
 
+struct SectorInfo
+{
+    uint32_t sector_num;
+    uint32_t address;
+    uint32_t erase_time_ms;
+};
+
+SectorInfo kSectors[] =
+{
+    { FLASH_SECTOR_0,  0x08000000,  500 },
+    { FLASH_SECTOR_1,  0x08004000,  500 },
+    { FLASH_SECTOR_2,  0x08008000,  500 },
+    { FLASH_SECTOR_3,  0x0800C000,  500 },
+    { FLASH_SECTOR_4,  0x08010000, 1100 },
+    { FLASH_SECTOR_5,  0x08020000, 2000 },
+    { FLASH_SECTOR_6,  0x08040000, 2000 },
+    { FLASH_SECTOR_7,  0x08060000, 2000 },
+    { FLASH_SECTOR_8,  0x08080000, 2000 },
+    { FLASH_SECTOR_9,  0x080A0000, 2000 },
+    { FLASH_SECTOR_10, 0x080C0000, 2000 },
+    { FLASH_SECTOR_11, 0x080E0000, 2000 },
+};
+
+bool WriteBlock(uint32_t address, const uint32_t* data, bool dry_run)
+{
+    uint32_t sector_index;
+    bool do_erase = false;
+
+    for (uint32_t i = 0; i < sizeof(kSectors) / sizeof(SectorInfo); i++)
+    {
+        if (address == kSectors[i].address)
+        {
+            sector_index = i;
+            do_erase = true;
+        }
+    }
+
+    if (dry_run)
+    {
+        if (do_erase)
+        {
+            HAL_Delay(kSectors[sector_index].erase_time_ms);
+        }
+
+        HAL_Delay(410);
+    }
+    else
+    {
+        if (HAL_OK != HAL_FLASH_Unlock())
+        {
+            return false;
+        }
+
+        if (do_erase)
+        {
+            FLASH_Erase_Sector(kSectors[sector_index].sector_num,
+                FLASH_VOLTAGE_RANGE_3);
+            FLASH_WaitForLastOperation(HAL_MAX_DELAY);
+        }
+
+        for (uint32_t i = 0; i < kBlockSize; i += 4)
+        {
+            if (HAL_OK != HAL_FLASH_Program(
+                FLASH_TYPEPROGRAM_WORD, address + i, *data++))
+            {
+                return false;
+            }
+        }
+
+        if (HAL_OK != HAL_FLASH_Lock())
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int main(void)
 {
     assert_param(HAL_OK == HAL_Init());
-    InitLEDs();
+    InitOutputPins();
+    InitSwitch();
     InitPowerAndClock();
     InitTimer();
     InitADC();
+    decoder.Init(kCRCSeed);
     __enable_irq();
 
-    uint32_t then = HAL_GetTick();
+    // Write to flash only if the button is held at power on. Otherwise just
+    // do a dry run, simulating the flash writes with delays.
+    bool dry_run = !HAL_GPIO_ReadPin(GPIOA, kSwitchPin);
+
+    uint32_t block_address = kAppStartAddress;
+
+    constexpr auto kPacketLED = kBlueLEDPin;
+    constexpr auto kWriteLED = kOrangeLEDPin;
+    constexpr auto kErrorLED = kRedLEDPin;
+    constexpr auto kSuccessLED = kGreenLEDPin;
 
     for (;;)
     {
-        uint32_t now = HAL_GetTick();
+        LL_GPIO_SetOutputPin(GPIOD, kProfilingPin);
+        auto result = decoder.Receive();
+        LL_GPIO_ResetOutputPin(GPIOD, kProfilingPin);
 
-        if (now - then >= 125)
+        if (result == qpsk::RESULT_PACKET_COMPLETE)
         {
-            LL_GPIO_TogglePin(GPIOD, kGreenLedPin);
-            then = now;
+            LL_GPIO_TogglePin(GPIOD, kPacketLED);
+        }
+        else if (result == qpsk::RESULT_BLOCK_COMPLETE)
+        {
+            LL_GPIO_ResetOutputPin(GPIOD, kPacketLED);
+            LL_GPIO_SetOutputPin(GPIOD, kWriteLED);
+
+            if (!WriteBlock(block_address, decoder.GetBlock(), dry_run))
+            {
+                decoder.Abort();
+            }
+
+            block_address += kBlockSize;
+            LL_GPIO_ResetOutputPin(GPIOD, kWriteLED);
+        }
+        else if (result == qpsk::RESULT_END)
+        {
+            for (;;)
+            {
+                LL_GPIO_TogglePin(GPIOD, kSuccessLED);
+                HAL_Delay(100);
+            }
+        }
+        else if (result == qpsk::RESULT_ERROR)
+        {
+            LL_GPIO_ResetOutputPin(GPIOD, kPacketLED);
+
+            switch (decoder.GetError())
+            {
+                case qpsk::ERROR_SYNC:
+                    LL_GPIO_SetOutputPin(GPIOD, kWriteLED);
+                    break;
+                case qpsk::ERROR_CRC:
+                    LL_GPIO_SetOutputPin(GPIOD, kPacketLED);
+                    break;
+                default:
+                    break;
+            }
+
+            while (!HAL_GPIO_ReadPin(GPIOA, kSwitchPin))
+            {
+                LL_GPIO_TogglePin(GPIOD, kErrorLED);
+                HAL_Delay(100);
+            }
+
+            LL_GPIO_SetOutputPin(GPIOD, kErrorLED);
+            while (HAL_GPIO_ReadPin(GPIOA, kSwitchPin));
+            LL_GPIO_ResetOutputPin(GPIOD, kErrorLED);
+            LL_GPIO_ResetOutputPin(GPIOD, kWriteLED);
+            LL_GPIO_ResetOutputPin(GPIOD, kPacketLED);
+
+            block_address = kAppStartAddress;
+            decoder.Reset();
         }
     }
 
