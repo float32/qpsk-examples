@@ -43,7 +43,7 @@ using namespace vcd;
 constexpr uint32_t kSampleRate = 48000;
 constexpr uint32_t kSymbolRate = 8000;
 constexpr uint32_t kPacketSize = 256;
-constexpr uint32_t kPageSize = kPacketSize * 4;
+constexpr uint32_t kBlockSize = kPacketSize * 4;
 constexpr uint32_t kCRCSeed = 0;
 constexpr uint32_t kSamplesPerSymbol = kSampleRate / kSymbolRate;
 constexpr uint8_t kFillByte = 0xFF;
@@ -58,7 +58,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     decltype(expected_data) decoded_data;
 
     auto signal = test::util::LoadAudio<Signal>(bin_file,
-        kSymbolRate, kPacketSize, kPageSize, kFlashWriteTime * 2);
+        kSymbolRate, kPacketSize, kBlockSize, kFlashWriteTime * 2);
 
     // Resample, attenuate, and add noise
     signal = test::util::Resample(signal, 1.02f);
@@ -95,7 +95,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     // Correlator vars
     VCDFixedPointVar<8, 16> v_corr_out(vcd, "top.q.dm", "corr.out");
 
-    Decoder<kSamplesPerSymbol, kPacketSize, kPageSize> qpsk;
+    Decoder<kSamplesPerSymbol, kPacketSize, kBlockSize> qpsk;
     qpsk.Init(kCRCSeed);
 
     TimeStamp time = 0;
@@ -110,15 +110,15 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
         if (flash_write_delay == 0)
         {
             result = qpsk.Receive();
-            if (result == RESULT_PAGE_COMPLETE)
+            if (result == RESULT_BLOCK_COMPLETE)
             {
-                uint32_t* page = qpsk.GetPage();
-                for (uint32_t i = 0; i < kPageSize / 4; i++)
+                uint32_t* block = qpsk.GetBlock();
+                for (uint32_t i = 0; i < kBlockSize / 4; i++)
                 {
-                    decoded_data.push_back(page[i] >>  0);
-                    decoded_data.push_back(page[i] >>  8);
-                    decoded_data.push_back(page[i] >> 16);
-                    decoded_data.push_back(page[i] >> 24);
+                    decoded_data.push_back(block[i] >>  0);
+                    decoded_data.push_back(block[i] >>  8);
+                    decoded_data.push_back(block[i] >> 16);
+                    decoded_data.push_back(block[i] >> 24);
                 }
                 flash_write_delay = kSampleRate * kFlashWriteTime;
             }

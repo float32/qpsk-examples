@@ -30,7 +30,7 @@ namespace qpsk::test::packet
 {
 
 constexpr uint32_t kPacketSize = 256;
-constexpr uint32_t kPacketsPerPage = 4;
+constexpr uint32_t kPacketsPerBlock = 4;
 constexpr uint32_t kCRCSeed = 0xDEADBEEF;
 
 template <typename T>
@@ -106,25 +106,25 @@ TEST(PacketTest, Invalid)
     ASSERT_NE(expected_crc, packet.CalculatedCRC());
 }
 
-TEST(PacketTest, PageFill)
+TEST(PacketTest, BlockFill)
 {
-    // The Page class does no validity checking so we can just fill it with
+    // The Block class does no validity checking so we can just fill it with
     // empty packets.
-    Page<kPacketSize * kPacketsPerPage> page;
+    Block<kPacketSize * kPacketsPerBlock> block;
     Packet<kPacketSize> packet;
-    page.Init();
+    block.Init();
     packet.Init(kCRCSeed);
 
-    for (uint32_t i = 0; i < kPacketsPerPage; i++)
+    for (uint32_t i = 0; i < kPacketsPerBlock; i++)
     {
-        ASSERT_FALSE(page.Complete());
-        page.AppendPacket(packet);
+        ASSERT_FALSE(block.Complete());
+        block.AppendPacket(packet);
     }
 
-    ASSERT_TRUE(page.Complete());
+    ASSERT_TRUE(block.Complete());
 
-    page.Clear();
-    ASSERT_FALSE(page.Complete());
+    block.Clear();
+    ASSERT_FALSE(block.Complete());
 }
 
 }

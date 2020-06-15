@@ -52,9 +52,9 @@ using ParamTypeList = ::testing::Types<
     num_packets = (1, 4, 7)
     encodings = itertools.product(symbol_duration, packet_size, num_packets)
     for (symbol_duration, packet_size, num_packets) in encodings:
-        page_size = packet_size * num_packets
+        block_size = packet_size * num_packets
         lines.append('ParamType<{:2}, {:4}, {:5}>'
-            .format(symbol_duration, packet_size, page_size))
+            .format(symbol_duration, packet_size, block_size))
     cog.outl(',\n'.join(lines))
     ]]]*/
     ParamType< 6,   52,    52>,
@@ -94,8 +94,8 @@ public:
 
     static constexpr int kSymbolDuration = std::tuple_element_t<0, T>::value;
     static constexpr int kPacketSize     = std::tuple_element_t<1, T>::value;
-    static constexpr int kPageSize       = std::tuple_element_t<2, T>::value;
-    Decoder<kSymbolDuration, kPacketSize, kPageSize, 256> qpsk_;
+    static constexpr int kBlockSize      = std::tuple_element_t<2, T>::value;
+    Decoder<kSymbolDuration, kPacketSize, kBlockSize, 256> qpsk_;
 
     static constexpr int kSymbolRate = kSampleRate / kSymbolDuration;
 
@@ -202,7 +202,7 @@ public:
         std::string bin_file = "unit_tests/data/data.bin";
         test_data_ = util::LoadBinary(bin_file);
         test_audio_ = util::LoadAudio<Signal>(bin_file,
-            kSymbolRate, kPacketSize, kPageSize);
+            kSymbolRate, kPacketSize, kBlockSize);
     }
 
     void SetUp() override
@@ -235,15 +235,15 @@ public:
                     ReceiveError(qpsk_.GetError());
                     FAIL();
                 }
-                else if (result == RESULT_PAGE_COMPLETE)
+                else if (result == RESULT_BLOCK_COMPLETE)
                 {
-                    uint32_t* page = qpsk_.GetPage();
-                    for (uint32_t i = 0; i < kPageSize / 4; i++)
+                    uint32_t* block = qpsk_.GetBlock();
+                    for (uint32_t i = 0; i < kBlockSize / 4; i++)
                     {
-                        data.push_back(page[i] >>  0);
-                        data.push_back(page[i] >>  8);
-                        data.push_back(page[i] >> 16);
-                        data.push_back(page[i] >> 24);
+                        data.push_back(block[i] >>  0);
+                        data.push_back(block[i] >>  8);
+                        data.push_back(block[i] >> 16);
+                        data.push_back(block[i] >> 24);
                     }
                     flash_write_delay = kSampleRate * kFlashWriteTime;
                 }
