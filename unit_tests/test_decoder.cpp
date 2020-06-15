@@ -155,6 +155,11 @@ public:
 
                 for (uint32_t col = 0; col < 16; col++)
                 {
+                    if (row + col >= kPacketSize)
+                    {
+                        break;
+                    }
+
                     printf("%02X ", qpsk_.GetPacket()[row + col]);
                 }
 
