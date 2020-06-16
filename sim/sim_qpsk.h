@@ -61,7 +61,8 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
         kSymbolRate, kPacketSize, kBlockSize, kFlashWriteTime * 2);
 
     // Resample, attenuate, and add noise
-    signal = test::util::Resample(signal, 1.02f);
+    static constexpr float kResamplingRatio = 1.02f;
+    signal = test::util::Resample(signal, kResamplingRatio);
     signal = test::util::Scale(signal, 0.1f);
     signal = test::util::AddNoise(signal, 0.01f);
 
@@ -98,7 +99,8 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     Decoder<kSamplesPerSymbol, kPacketSize, kBlockSize> qpsk;
     qpsk.Init(kCRCSeed);
 
-    TimeStamp time = 0;
+    double time = 0;
+    double timestep = 1.0e6 / (kSampleRate * kResamplingRatio);
     int flash_write_delay = 0;
 
     // Begin decoding
@@ -151,7 +153,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
         v_pll_crfq_out.change(time, qpsk.RecoveredQ());
         v_corr_out.change(time, qpsk.Correlation());
 
-        time += 1000000 / kSampleRate;
+        time += timestep;
     }
 
     v_time_extend.change(time, 0);
