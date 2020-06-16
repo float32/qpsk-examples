@@ -144,7 +144,10 @@ inline T LoadAudio(std::string bin_file_path,
         << " -a 0";
     std::string cmd = ss.str();
     auto wav_file = popen(cmd.c_str(), "r");
-    fseek(wav_file, 44, SEEK_SET);
+    for (uint32_t i = 0; i < 44; i++)
+    {
+        fgetc(wav_file);
+    }
     for (;;)
     {
         int16_t sample = (fgetc(wav_file) & 0xFF);
