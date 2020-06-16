@@ -65,6 +65,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     signal = test::util::Resample(signal, kResamplingRatio);
     signal = test::util::Scale(signal, 0.1f);
     signal = test::util::AddNoise(signal, 0.01f);
+    signal = test::util::AddOffset(signal, 0.25f);
 
     VCDWriter vcd{vcd_file,
         makeVCDHeader(TimeScale::ONE, TimeScaleUnit::us, utils::now())};
