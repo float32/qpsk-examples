@@ -64,9 +64,23 @@ inline T Scale(T signal, float level)
 {
     if (level != 1.f)
     {
-        for (auto it = signal.begin(); it != signal.end(); it++)
+        for (auto& sample : signal)
         {
-            *it *= level;
+            sample *= level;
+        }
+    }
+
+    return signal;
+}
+
+template <typename T>
+inline T AddOffset(T signal, float level)
+{
+    if (level != 1.f)
+    {
+        for (auto& sample : signal)
+        {
+            sample += level;
         }
     }
 
@@ -81,12 +95,10 @@ inline T AddNoise(T signal, float noise_level)
         std::minstd_rand rng;
         std::uniform_real_distribution<float> dist(-1, 1);
 
-        for (auto it = signal.begin(); it != signal.end(); it++)
+        for (auto& sample : signal)
         {
-            float sample = *it;
             sample += noise_level * dist(rng);
             sample = (sample > 1) ? 1 : (sample < -1) ? -1 : sample;
-            *it = sample;
         }
     }
 
