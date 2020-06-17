@@ -64,7 +64,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     static constexpr float kResamplingRatio = 1.02f;
     signal = test::util::Resample(signal, kResamplingRatio);
     signal = test::util::Scale(signal, 0.1f);
-    signal = test::util::AddNoise(signal, 0.01f);
+    signal = test::util::AddNoise(signal, 0.025f);
     signal = test::util::AddOffset(signal, 0.25f);
 
     VCDWriter vcd{vcd_file,
@@ -113,19 +113,24 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
         if (flash_write_delay == 0)
         {
             result = qpsk.Receive();
+
             if (result == RESULT_BLOCK_COMPLETE)
             {
-                uint32_t* block = qpsk.GetBlock();
-                for (uint32_t i = 0; i < kBlockSize / 4; i++)
-                {
-                    decoded_data.push_back(block[i] >>  0);
-                    decoded_data.push_back(block[i] >>  8);
-                    decoded_data.push_back(block[i] >> 16);
-                    decoded_data.push_back(block[i] >> 24);
-                }
                 flash_write_delay = kSampleRate * kFlashWriteTime;
             }
-            else if (result == RESULT_ERROR)
+
+            if (result == RESULT_PACKET_COMPLETE ||
+                result == RESULT_BLOCK_COMPLETE ||
+                (result == RESULT_ERROR && qpsk.GetError() == ERROR_CRC))
+            {
+                uint8_t* packet = qpsk.GetPacket();
+                for (uint32_t i = 0; i < kPacketSize; i++)
+                {
+                    decoded_data.push_back(packet[i]);
+                }
+            }
+
+            if (result == RESULT_ERROR)
             {
                 qpsk.Abort();
             }

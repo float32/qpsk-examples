@@ -275,7 +275,7 @@ TYPED_TEST_CASE(DecoderTest, ParamTypeList);
 
 TYPED_TEST(DecoderTest, Noisy)
 {
-    this->Decode(1.f, 0.1f, 0.01f);
+    this->Decode(1.f, 0.1f, 0.025f);
 }
 
 TYPED_TEST(DecoderTest, Inverted)
