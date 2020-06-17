@@ -97,7 +97,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     // Correlator vars
     VCDFixedPointVar<8, 16> v_corr_out(vcd, "top.q.dm", "corr.out");
 
-    Decoder<kSamplesPerSymbol, kPacketSize, kBlockSize> qpsk;
+    Decoder<kSamplesPerSymbol, kPacketSize, kBlockSize, 1> qpsk;
     qpsk.Init(kCRCSeed);
 
     double time = 0;
