@@ -43,7 +43,7 @@ TEST(UtilTest, Sine)
 
     for (int32_t i = -100000; i < 100000; i++)
     {
-        double x = 3.f * i / 100000.f;
+        double x = 3.0 * i / 100000.0;
 
         double sin_expected = std::sin(x * 2 * M_PI);
         double sin_actual = Sine(x);
@@ -64,6 +64,83 @@ TEST(UtilTest, Sine)
     }
 
     // printf("Worst sine error: % .8e\n", worst);
+}
+
+TEST(UtilTest, ArcCot)
+{
+    for (int32_t i = -100000; i <= 100000; i++)
+    {
+        double x = i / 100000.0;
+        double expected = M_PI_2 - std::atan(x);
+        float actual = RestrictedArcCot(x);
+
+        ASSERT_NEAR(expected, actual, 0.01)
+            << "With x = " << x;
+    }
+}
+
+TEST(UtilTest, ArcTan)
+{
+    for (int32_t i = -100000; i <= 100000; i++)
+    {
+        double x = i / 100000.0;
+        double expected = std::atan(x);
+        float actual = RestrictedArcTan(x);
+
+        ASSERT_NEAR(expected, actual, 0.01)
+            << "With x = " << x;
+    }
+}
+
+TEST(UtilTest, VectorToAngle)
+{
+    for (int32_t i = -100000; i <= 100000; i++)
+    {
+        double expected = M_PI * (i / 100000.0);
+        double x = std::cos(expected);
+        double y = std::sin(expected);
+        float actual = VectorToAngle(x, y);
+
+        if (expected - actual > M_PI)
+        {
+            expected -= 2 * M_PI;
+        }
+        else if (actual - expected > M_PI)
+        {
+            expected += 2 * M_PI;
+        }
+
+        ASSERT_GE(actual, -M_PI);
+        ASSERT_LE(actual, 2 * M_PI);
+        ASSERT_NEAR(expected, actual, 0.01)
+            << "With x = " << x << ", y = " << y;
+    }
+}
+
+TEST(UtilTest, VectorToPhase)
+{
+    for (int32_t i = -100000; i <= 100000; i++)
+    {
+        double angle = M_PI * (i / 100000.0);
+        double x = std::cos(angle);
+        double y = std::sin(angle);
+        double expected = std::atan2(y, x) / (2 * M_PI);
+        float actual = VectorToPhase(x, y);
+
+        if (expected - actual > 0.5)
+        {
+            expected -= 1.0;
+        }
+        else if (actual - expected > 0.5)
+        {
+            expected += 1.0;
+        }
+
+        ASSERT_GE(actual, 0.0);
+        ASSERT_LT(actual, 1.0);
+        ASSERT_NEAR(expected, actual, 0.01 / (2 * M_PI))
+            << "With x = " << x << ", y = " << y;
+    }
 }
 
 }
