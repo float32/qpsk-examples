@@ -14,4 +14,7 @@ tests: $(TARGET_DIR)/$(TARGET)
 .PHONY: check
 check: $(TARGET_DIR)/$(TARGET)
 	$<
-	python3 unit_tests/test_encoder.py -v
+
+.PHONY: py-check
+py-check:
+	PYTHONPATH=. python3 unit_tests/test_encoder.py -v
