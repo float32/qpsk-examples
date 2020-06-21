@@ -80,6 +80,7 @@
         {
             "name": "python tests",
             "shell_cmd": "make py-check",
+            "file_regex": "^[ ]*File \"(...*?)\", line ([0-9]*)",
             "working_dir": "$project_path",
             "variants":
             [
