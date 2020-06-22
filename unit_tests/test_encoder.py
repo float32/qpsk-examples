@@ -33,7 +33,7 @@ import codecs
 
 class TestQPSKEncoder(unittest.TestCase):
 
-    GOLDEN_CRC32 = 0xb3692966
+    GOLDEN_CRC32 = 0x99681C48
 
     @classmethod
     def setUp(cls):

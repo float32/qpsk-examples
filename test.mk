@@ -14,4 +14,4 @@ tests: $(TARGET_DIR)/$(TARGET)
 .PHONY: check
 check: $(TARGET_DIR)/$(TARGET) $(TEST_WAV_FILES)
 	$<
-# 	python3 unit_tests/test_encoder.py -v
+	python3 unit_tests/test_encoder.py -v
