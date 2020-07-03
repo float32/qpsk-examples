@@ -124,26 +124,6 @@ public:
             }
 
             printf("\n");
-            printf("  Expected symbols : ");
-
-            auto mask = qpsk_.ExpectedSymbolMask();
-
-            for (uint32_t i = 0; i < 5; i++)
-            {
-                if (mask & 1)
-                {
-                    printf("%u", i);
-
-                    if (mask >> 1)
-                    {
-                        printf(", ");
-                    }
-                }
-
-                mask >>= 1;
-            }
-
-            printf("\n");
         }
         else if (error == ERROR_CRC)
         {
