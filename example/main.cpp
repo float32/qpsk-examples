@@ -201,7 +201,7 @@ struct SectorInfo
     uint32_t erase_time_ms;
 };
 
-SectorInfo kSectors[] =
+const SectorInfo kSectors[] =
 {
     { FLASH_SECTOR_0,  0x08000000,  500 },
     { FLASH_SECTOR_1,  0x08004000,  500 },
@@ -219,14 +219,14 @@ SectorInfo kSectors[] =
 
 bool WriteBlock(uint32_t address, const uint32_t* data, bool dry_run)
 {
-    uint32_t sector_index;
+    SectorInfo sector_info;
     bool do_erase = false;
 
-    for (uint32_t i = 0; i < sizeof(kSectors) / sizeof(SectorInfo); i++)
+    for (auto& sector : kSectors)
     {
-        if (address == kSectors[i].address)
+        if (address == sector.address)
         {
-            sector_index = i;
+            sector_info = sector;
             do_erase = true;
         }
     }
@@ -235,7 +235,7 @@ bool WriteBlock(uint32_t address, const uint32_t* data, bool dry_run)
     {
         if (do_erase)
         {
-            HAL_Delay(kSectors[sector_index].erase_time_ms);
+            HAL_Delay(sector_info.erase_time_ms);
         }
 
         HAL_Delay(410);
@@ -249,7 +249,7 @@ bool WriteBlock(uint32_t address, const uint32_t* data, bool dry_run)
 
         if (do_erase)
         {
-            FLASH_Erase_Sector(kSectors[sector_index].sector_num,
+            FLASH_Erase_Sector(sector_info.sector_num,
                 FLASH_VOLTAGE_RANGE_3);
             FLASH_WaitForLastOperation(HAL_MAX_DELAY);
         }
