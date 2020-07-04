@@ -48,6 +48,7 @@ void ADC_IRQHandler(void)
     int16_t data = LL_ADC_REG_ReadConversionData12(ADC1);
     float sample = (data - 0x800) / 2048.f;
     decoder.Push(sample);
+    LL_GPIO_SetOutputPin(GPIOD, kProfilingPin);
 }
 
 void InitOutputPins(void)
@@ -295,7 +296,6 @@ int main(void)
 
     for (;;)
     {
-        LL_GPIO_SetOutputPin(GPIOD, kProfilingPin);
         auto result = decoder.Receive();
         LL_GPIO_ResetOutputPin(GPIOD, kProfilingPin);
 
