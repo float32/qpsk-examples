@@ -17,12 +17,13 @@ constexpr uint32_t kProfilingPin = GPIO_PIN_11;
 constexpr uint32_t kSwitchPin    = GPIO_PIN_0;
 
 static_assert(SAMPLE_RATE % SYMBOL_RATE == 0);
-constexpr uint32_t kSamplesPerSymbol = SAMPLE_RATE / SYMBOL_RATE;
+constexpr uint32_t kSampleRate = SAMPLE_RATE;
+constexpr uint32_t kSymbolRate = SYMBOL_RATE;
 constexpr uint32_t kPacketSize = PACKET_SIZE;
 constexpr uint32_t kBlockSize = BLOCK_SIZE;
 constexpr uint32_t kCRCSeed = CRC_SEED;
 
-qpsk::Decoder<kSamplesPerSymbol, kPacketSize, kBlockSize> decoder;
+qpsk::Decoder<kSampleRate, kSymbolRate, kPacketSize, kBlockSize> decoder;
 
 #ifdef USE_FULL_ASSERT
 extern "C"

@@ -95,9 +95,8 @@ public:
     static constexpr int kSymbolDuration = std::tuple_element_t<0, T>::value;
     static constexpr int kPacketSize     = std::tuple_element_t<1, T>::value;
     static constexpr int kBlockSize      = std::tuple_element_t<2, T>::value;
-    Decoder<kSymbolDuration, kPacketSize, kBlockSize, 256> qpsk_;
-
-    static constexpr int kSymbolRate = kSampleRate / kSymbolDuration;
+    static constexpr int kSymbolRate     = kSampleRate / kSymbolDuration;
+    Decoder<kSampleRate, kSymbolRate, kPacketSize, kBlockSize, 256> qpsk_;
 
     void DebugError(Error error)
     {

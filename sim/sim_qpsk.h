@@ -45,7 +45,6 @@ constexpr uint32_t kSymbolRate = 8000;
 constexpr uint32_t kPacketSize = 256;
 constexpr uint32_t kBlockSize = kPacketSize * 4;
 constexpr uint32_t kCRCSeed = 0;
-constexpr uint32_t kSamplesPerSymbol = kSampleRate / kSymbolRate;
 constexpr uint8_t kFillByte = 0xFF;
 constexpr float kFlashWriteTime = 0.025f;
 
@@ -97,7 +96,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     // Correlator vars
     VCDFixedPointVar<8, 16> v_corr_out(vcd, "top.q.dm", "corr.out");
 
-    Decoder<kSamplesPerSymbol, kPacketSize, kBlockSize, 1> qpsk;
+    Decoder<kSampleRate, kSymbolRate, kPacketSize, kBlockSize, 1> qpsk;
     qpsk.Init(kCRCSeed);
 
     double time = 0;
