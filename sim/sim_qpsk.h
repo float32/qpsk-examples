@@ -181,7 +181,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
         out.close();
     }
 
-    if (result == RESULT_ERROR)
+    if (result != RESULT_END)
     {
         throw std::runtime_error("Error during decoding");
     }

@@ -206,6 +206,7 @@ public:
         int flash_write_delay = 0;
 
         // Begin decoding
+        Result result;
         std::vector<uint8_t> data;
         for (auto sample : signal)
         {
@@ -213,7 +214,7 @@ public:
 
             if (flash_write_delay == 0)
             {
-                auto result = qpsk_.Receive();
+                result = qpsk_.Receive();
 
                 if (result == RESULT_ERROR)
                 {
@@ -238,6 +239,8 @@ public:
                 flash_write_delay--;
             }
         }
+
+        ASSERT_EQ(result, RESULT_END);
 
         // Compare the received data to the bin file
         ASSERT_GE(data.size(), test_data_.size());
