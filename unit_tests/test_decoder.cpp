@@ -172,10 +172,6 @@ public:
             printf("Error : abort\n");
             break;
 
-        case ERROR_TIMEOUT:
-            printf("Error : timeout\n");
-            break;
-
         case ERROR_NONE:
             break;
         }
