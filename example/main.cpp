@@ -337,6 +337,10 @@ int main(void)
                 case qpsk::ERROR_CRC:
                     LL_GPIO_SetOutputPin(GPIOD, kPacketLED);
                     break;
+                case qpsk::ERROR_OVERFLOW:
+                    LL_GPIO_SetOutputPin(GPIOD, kWriteLED);
+                    LL_GPIO_SetOutputPin(GPIOD, kPacketLED);
+                    break;
                 default:
                     break;
             }
