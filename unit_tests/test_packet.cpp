@@ -99,36 +99,36 @@ protected:
 
 TYPED_TEST_CASE(PacketTest, PacketSizes);
 
-TYPED_TEST(PacketTest, Valid)
+TYPED_TEST(PacketTest, valid)
 {
     for (auto byte : this->data_)
     {
-        ASSERT_FALSE(this->packet_.Complete());
-        ASSERT_FALSE(this->packet_.Valid());
+        ASSERT_FALSE(this->packet_.full());
+        ASSERT_FALSE(this->packet_.valid());
         this->PushByte(byte);
     }
 
     for (uint32_t i = 0; i < 32; i += 8)
     {
-        ASSERT_FALSE(this->packet_.Complete());
-        ASSERT_FALSE(this->packet_.Valid());
+        ASSERT_FALSE(this->packet_.full());
+        ASSERT_FALSE(this->packet_.valid());
         this->PushByte(this->expected_crc_ >> i);
     }
 
-    ASSERT_FALSE(this->packet_.Complete());
-    ASSERT_FALSE(this->packet_.Valid());
+    ASSERT_FALSE(this->packet_.full());
+    ASSERT_FALSE(this->packet_.valid());
     this->PushByte(this->hamming_.parity());
-    ASSERT_FALSE(this->packet_.Complete());
-    ASSERT_FALSE(this->packet_.Valid());
+    ASSERT_FALSE(this->packet_.full());
+    ASSERT_FALSE(this->packet_.valid());
     this->PushByte(this->hamming_.parity() >> 8);
 
-    ASSERT_TRUE(this->packet_.Complete());
-    ASSERT_TRUE(this->packet_.Valid());
-    ASSERT_EQ(this->expected_crc_, this->packet_.CalculatedCRC());
+    ASSERT_TRUE(this->packet_.full());
+    ASSERT_TRUE(this->packet_.valid());
+    ASSERT_EQ(this->expected_crc_, this->packet_.calculated_crc());
 
     this->packet_.Reset();
-    ASSERT_FALSE(this->packet_.Complete());
-    ASSERT_FALSE(this->packet_.Valid());
+    ASSERT_FALSE(this->packet_.full());
+    ASSERT_FALSE(this->packet_.valid());
 }
 
 TYPED_TEST(PacketTest, Invalid)
@@ -138,32 +138,32 @@ TYPED_TEST(PacketTest, Invalid)
 
     for (uint32_t i = 0; i < this->kPacketSize; i++)
     {
-        ASSERT_FALSE(this->packet_.Complete());
-        ASSERT_FALSE(this->packet_.Valid());
+        ASSERT_FALSE(this->packet_.full());
+        ASSERT_FALSE(this->packet_.valid());
         this->PushByte(this->data_[i]);
     }
 
     for (uint32_t i = 0; i < 32; i += 8)
     {
-        ASSERT_FALSE(this->packet_.Complete());
-        ASSERT_FALSE(this->packet_.Valid());
+        ASSERT_FALSE(this->packet_.full());
+        ASSERT_FALSE(this->packet_.valid());
         this->PushByte(this->expected_crc_ >> i);
     }
 
-    ASSERT_FALSE(this->packet_.Complete());
-    ASSERT_FALSE(this->packet_.Valid());
+    ASSERT_FALSE(this->packet_.full());
+    ASSERT_FALSE(this->packet_.valid());
     this->PushByte(this->hamming_.parity());
-    ASSERT_FALSE(this->packet_.Complete());
-    ASSERT_FALSE(this->packet_.Valid());
+    ASSERT_FALSE(this->packet_.full());
+    ASSERT_FALSE(this->packet_.valid());
     this->PushByte(this->hamming_.parity() >> 8);
 
-    ASSERT_TRUE(this->packet_.Complete());
-    ASSERT_FALSE(this->packet_.Valid());
-    ASSERT_NE(this->expected_crc_, this->packet_.CalculatedCRC());
+    ASSERT_TRUE(this->packet_.full());
+    ASSERT_FALSE(this->packet_.valid());
+    ASSERT_NE(this->expected_crc_, this->packet_.calculated_crc());
 
     this->packet_.Reset();
-    ASSERT_FALSE(this->packet_.Complete());
-    ASSERT_FALSE(this->packet_.Valid());
+    ASSERT_FALSE(this->packet_.full());
+    ASSERT_FALSE(this->packet_.valid());
 }
 
 TYPED_TEST(PacketTest, BlockFill)
@@ -172,7 +172,7 @@ TYPED_TEST(PacketTest, BlockFill)
 
     for (uint32_t i = 0; i < kPacketsPerBlock; i++)
     {
-        ASSERT_FALSE(this->block_.Complete());
+        ASSERT_FALSE(this->block_.full());
         this->RandomizeData();
         this->packet_.Reset();
 
@@ -185,7 +185,7 @@ TYPED_TEST(PacketTest, BlockFill)
         this->block_.AppendPacket(this->packet_);
     }
 
-    ASSERT_TRUE(this->block_.Complete());
+    ASSERT_TRUE(this->block_.full());
 
     for (uint32_t i = 0; i < this->kBlockSize / 4; i++)
     {
@@ -202,7 +202,7 @@ TYPED_TEST(PacketTest, BlockFill)
     }
 
     this->block_.Clear();
-    ASSERT_FALSE(this->block_.Complete());
+    ASSERT_FALSE(this->block_.full());
 }
 
 }

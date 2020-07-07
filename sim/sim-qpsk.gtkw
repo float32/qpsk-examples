@@ -38,7 +38,7 @@ top.q.dm.\pll.phase
 -
 @40008420
 [fpshift_count] 16
-top.q.dm.\pll.ph_err
+top.q.dm.\pll.error
 @20000
 -
 @40008420
@@ -55,7 +55,7 @@ top.q.dm.\crfq.out
 -
 @40008420
 [fpshift_count] 16
-top.q.dm.\pll.ph_inc
+top.q.dm.\pll.step
 @20000
 -
 -

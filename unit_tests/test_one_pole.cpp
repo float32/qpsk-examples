@@ -44,9 +44,9 @@ TEST(OnePoleTest, LowpassDecayTime)
         lpf.Process(1.f);
         float time = i / sample_rate;
         float expected = 1 - std::exp(-time / tau);
-        ASSERT_NEAR(expected, lpf.Output(), 1e-5) << "at t = " << time;
+        ASSERT_NEAR(expected, lpf.output(), 1e-5) << "at t = " << time;
 
-        float error = abs(expected - lpf.Output());
+        float error = abs(expected - lpf.output());
         worst = error > worst ? error : worst;
     }
 

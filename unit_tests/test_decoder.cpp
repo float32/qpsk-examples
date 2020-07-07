@@ -103,16 +103,16 @@ public:
         printf("  PLL freq         : %li\n"
                "  Decision phase   : %li\n"
                "  Signal power     : %li\n",
-               std::lround(1000 * qpsk_.PllPhaseIncrement()),
-               std::lround(1000 * qpsk_.DecisionPhase()),
-               std::lround(1000 * qpsk_.SignalPower()));
+               std::lround(1000 * qpsk_.pll_step()),
+               std::lround(1000 * qpsk_.decision_phase()),
+               std::lround(1000 * qpsk_.signal_power()));
 
         if (error == ERROR_SYNC)
         {
             printf("  Recent symbols   :");
             uint8_t symbol;
 
-            while (qpsk_.SymbolsAvailable() > 16)
+            while (qpsk_.symbols_available() > 16)
             {
                 qpsk_.PopSymbol(symbol);
             }
@@ -139,7 +139,7 @@ public:
                         break;
                     }
 
-                    printf("%02X ", qpsk_.GetPacket()[row + col]);
+                    printf("%02X ", qpsk_.packet_data()[row + col]);
                 }
 
                 printf("\n");

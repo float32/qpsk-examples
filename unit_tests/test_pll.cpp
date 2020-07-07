@@ -82,12 +82,12 @@ TEST_P(PLLTest, Lock)
         // PLL phase and then lowpass to extract the DC component, but since
         // we already know the input signal's phase, we can calculate the DC
         // component directly by using trigonometric product-to-sum identities.
-        double delta = PhaseDifference(pll_.Phase(), input_phase);
+        double delta = PhaseDifference(pll_.phase(), input_phase);
         double i = 0.5 * cos(-2 * M_PI * delta);
         double q = 0.5 * sin(-2 * M_PI * delta);
         double phase_error = q - i;
 
-        double offset = PhaseDifference(pll_.Phase(), input_phase);
+        double offset = PhaseDifference(pll_.phase(), input_phase);
 
         if (t > 0.25)
         {

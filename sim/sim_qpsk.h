@@ -88,8 +88,8 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
 
     // PLL vars
     VCDFixedPointVar<2, 16> v_pll_phase(vcd, "top.q.dm", "pll.phase");
-    VCDFixedPointVar<2, 16> v_pll_phase_error(vcd, "top.q.dm", "pll.ph_err");
-    VCDFixedPointVar<2, 16> v_pll_phase_inc(vcd, "top.q.dm", "pll.ph_inc");
+    VCDFixedPointVar<2, 16> v_pll_error(vcd, "top.q.dm", "pll.error");
+    VCDFixedPointVar<2, 16> v_pll_step(vcd, "top.q.dm", "pll.step");
     VCDFixedPointVar<4, 16> v_pll_crfi_out(vcd, "top.q.dm", "crfi.out");
     VCDFixedPointVar<4, 16> v_pll_crfq_out(vcd, "top.q.dm", "crfq.out");
 
@@ -122,7 +122,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
                 result == RESULT_BLOCK_COMPLETE ||
                 (result == RESULT_ERROR && qpsk.GetError() == ERROR_CRC))
             {
-                uint8_t* packet = qpsk.GetPacket();
+                uint8_t* packet = qpsk.packet_data();
                 for (uint32_t i = 0; i < kPacketSize; i++)
                 {
                     decoded_data.push_back(packet[i]);
@@ -142,21 +142,21 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
         v_q_in.change(time, sample);
         v_q_state.change(time, qpsk.state());
 
-        v_pkt_byte.change(time, qpsk.PacketByte());
-        v_dm_state.change(time, qpsk.DemodulatorState());
-        v_dm_symbol.change(time, qpsk.LastSymbol());
-        v_dm_early.change(time, qpsk.Early());
-        v_dm_late.change(time, qpsk.Late());
-        v_dm_decide.change(time, qpsk.Decide());
-        v_dm_power.change(time, qpsk.SignalPower());
-        v_dm_dec_ph.change(time, qpsk.DecisionPhase());
+        v_pkt_byte.change(time, qpsk.packet_byte());
+        v_dm_state.change(time, qpsk.demodulator_state());
+        v_dm_symbol.change(time, qpsk.last_symbol());
+        v_dm_early.change(time, qpsk.early());
+        v_dm_late.change(time, qpsk.late());
+        v_dm_decide.change(time, qpsk.decide());
+        v_dm_power.change(time, qpsk.signal_power());
+        v_dm_dec_ph.change(time, qpsk.decision_phase());
 
-        v_pll_phase.change(time, qpsk.PllPhase());
-        v_pll_phase_error.change(time, qpsk.PllPhaseError());
-        v_pll_phase_inc.change(time, qpsk.PllPhaseIncrement());
-        v_pll_crfi_out.change(time, qpsk.RecoveredI());
-        v_pll_crfq_out.change(time, qpsk.RecoveredQ());
-        v_corr_out.change(time, qpsk.Correlation());
+        v_pll_phase.change(time, qpsk.pll_phase());
+        v_pll_error.change(time, qpsk.pll_error());
+        v_pll_step.change(time, qpsk.pll_step());
+        v_pll_crfi_out.change(time, qpsk.recovered_i());
+        v_pll_crfq_out.change(time, qpsk.recovered_q());
+        v_corr_out.change(time, qpsk.correlation());
 
         time += timestep;
     }

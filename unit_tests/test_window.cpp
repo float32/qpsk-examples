@@ -51,8 +51,8 @@ TYPED_TEST(WindowTest, All)
 {
     int32_t window_length = this->window_.length();
 
-    ASSERT_EQ(this->window_.Sum(), 0);
-    ASSERT_EQ(this->window_.Average(), 0);
+    ASSERT_EQ(this->window_.sum(), 0);
+    ASSERT_EQ(this->window_.average(), 0);
 
     float sum = 0;
 
@@ -76,9 +76,9 @@ TYPED_TEST(WindowTest, All)
             }
         }
 
-        ASSERT_FLOAT_EQ(this->window_.Sum(), sum)
+        ASSERT_FLOAT_EQ(this->window_.sum(), sum)
             << "i = " << i;
-        ASSERT_FLOAT_EQ(this->window_.Average(), sum / window_length)
+        ASSERT_FLOAT_EQ(this->window_.average(), sum / window_length)
             << "i = " << i;
     }
 }
@@ -89,7 +89,7 @@ TYPED_TEST(WindowTest, Drift)
     rng.seed(1);
     std::uniform_real_distribution<float> dist(0, 1);
 
-    ASSERT_EQ(this->window_.Sum(), 0);
+    ASSERT_EQ(this->window_.sum(), 0);
 
     for (int i = 0; i < 1000000; i++)
     {
@@ -102,7 +102,7 @@ TYPED_TEST(WindowTest, Drift)
         sum += this->window_[i];
     }
 
-    ASSERT_FLOAT_EQ(this->window_.Sum(), sum);
+    ASSERT_FLOAT_EQ(this->window_.sum(), sum);
 }
 
 template <typename T>
@@ -131,8 +131,8 @@ TYPED_TEST(BayTest, All)
     int32_t bay_width = this->bay_.width();
     int32_t window_length = this->bay_.length();
 
-    ASSERT_EQ(this->bay_.Sum(), 0);
-    ASSERT_EQ(this->bay_.Average(), 0);
+    ASSERT_EQ(this->bay_.sum(), 0);
+    ASSERT_EQ(this->bay_.average(), 0);
 
     float sum = 0;
     int32_t total_length = bay_width * window_length;
@@ -162,9 +162,9 @@ TYPED_TEST(BayTest, All)
             }
         }
 
-        ASSERT_FLOAT_EQ(this->bay_.Sum(), sum)
+        ASSERT_FLOAT_EQ(this->bay_.sum(), sum)
             << "i = " << i;
-        ASSERT_FLOAT_EQ(this->bay_.Average(), sum / total_length)
+        ASSERT_FLOAT_EQ(this->bay_.average(), sum / total_length)
             << "i = " << i;
     }
 }
@@ -175,7 +175,7 @@ TYPED_TEST(BayTest, Drift)
     rng.seed(1);
     std::uniform_real_distribution<float> dist(0, 1);
 
-    ASSERT_EQ(this->bay_.Sum(), 0);
+    ASSERT_EQ(this->bay_.sum(), 0);
 
     for (int i = 0; i < 1000000; i++)
     {
@@ -191,7 +191,7 @@ TYPED_TEST(BayTest, Drift)
         }
     }
 
-    ASSERT_FLOAT_EQ(this->bay_.Sum(), sum);
+    ASSERT_FLOAT_EQ(this->bay_.sum(), sum);
 }
 
 }
