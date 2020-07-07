@@ -144,9 +144,6 @@ public:
 
                 printf("\n");
             }
-
-            printf("  Calculated CRC   : 0x%08X\n", qpsk_.CalculatedCRC());
-            printf("  Expected CRC     : 0x%08X\n", qpsk_.ExpectedCRC());
         }
     }
 
