@@ -297,7 +297,7 @@ int main(void)
 
     for (;;)
     {
-        auto result = decoder.Receive();
+        auto result = decoder.Process();
         LL_GPIO_ResetOutputPin(GPIOD, kProfilingPin);
 
         if (result == qpsk::RESULT_PACKET_COMPLETE)
@@ -309,7 +309,7 @@ int main(void)
             LL_GPIO_ResetOutputPin(GPIOD, kPacketLED);
             LL_GPIO_SetOutputPin(GPIOD, kWriteLED);
 
-            if (!WriteBlock(block_address, decoder.GetBlock(), dry_run))
+            if (!WriteBlock(block_address, decoder.block_data(), dry_run))
             {
                 decoder.Abort();
             }
@@ -329,7 +329,7 @@ int main(void)
         {
             LL_GPIO_ResetOutputPin(GPIOD, kPacketLED);
 
-            switch (decoder.GetError())
+            switch (decoder.error())
             {
                 case qpsk::ERROR_SYNC:
                     LL_GPIO_SetOutputPin(GPIOD, kWriteLED);

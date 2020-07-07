@@ -111,7 +111,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
 
         if (flash_write_delay == 0)
         {
-            result = qpsk.Receive();
+            result = qpsk.Process();
 
             if (result == RESULT_BLOCK_COMPLETE)
             {
@@ -120,7 +120,7 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
 
             if (result == RESULT_PACKET_COMPLETE ||
                 result == RESULT_BLOCK_COMPLETE ||
-                (result == RESULT_ERROR && qpsk.GetError() == ERROR_CRC))
+                (result == RESULT_ERROR && qpsk.error() == ERROR_CRC))
             {
                 uint8_t* packet = qpsk.packet_data();
                 for (uint32_t i = 0; i < kPacketSize; i++)
