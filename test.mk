@@ -12,6 +12,6 @@ TGT_LDLIBS := -lgtest -lgtest_main -lpthread -lz
 tests: $(TARGET_DIR)/$(TARGET)
 
 .PHONY: check
-check: $(TARGET_DIR)/$(TARGET) $(TEST_WAV_FILES)
+check: $(TARGET_DIR)/$(TARGET)
 	$<
 	python3 unit_tests/test_encoder.py -v
