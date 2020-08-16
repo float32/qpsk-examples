@@ -38,6 +38,8 @@ constexpr uint32_t kCRCSeed = 0;
 constexpr uint8_t kFillByte = 0xFF;
 constexpr float kFlashWriteTime = 0.025f;
 
+using Signal = std::vector<float>;
+
 template <int A, int B, int C>
 using ParamType = std::tuple<
     std::integral_constant<int, A>,
@@ -88,7 +90,6 @@ template <typename T>
 class DecoderTest : public ::testing::Test
 {
 public:
-    using Signal = std::vector<float>;
     static inline Signal test_audio_;
     static inline std::vector<uint8_t> test_data_;
 
@@ -271,6 +272,79 @@ TYPED_TEST(DecoderTest, Downsampled)
 TYPED_TEST(DecoderTest, Imperfect)
 {
     this->Decode(0.98f, 0.5f, 0.01f);
+}
+
+
+
+class HangTest : public ::testing::Test
+{
+public:
+    Decoder<kSampleRate, 8000, 256, 1024, 256> qpsk_;
+
+    void SetUp() override
+    {
+        qpsk_.Init(kCRCSeed);
+    }
+
+    Result Run(std::string command)
+    {
+        auto signal = util::LoadAudioFromCommand<Signal>(command);
+
+        int flash_write_delay = 0;
+        Result result;
+
+        for (auto sample : signal)
+        {
+            qpsk_.Push(sample);
+
+            if (flash_write_delay == 0)
+            {
+                result = qpsk_.Process();
+                if (result == RESULT_BLOCK_COMPLETE)
+                {
+                    flash_write_delay = kSampleRate * kFlashWriteTime;
+                }
+            }
+            else
+            {
+                flash_write_delay--;
+            }
+        }
+
+        return result;
+    }
+};
+
+TEST_F(HangTest, Sync)
+{
+    // Make sure that the decoder errors out instead of hanging when the
+    // carrier sync is interrupted by silence.
+    auto result = Run("PYTHONPATH=. python3 unit_tests/hang.py sync");
+    ASSERT_EQ(result, RESULT_ERROR);
+}
+
+TEST_F(HangTest, Prealignment)
+{
+    // Make sure that the decoder errors out instead of hanging when the
+    // alignment sequence is interrupted by silence.
+    auto result = Run("PYTHONPATH=. python3 unit_tests/hang.py prealign");
+    ASSERT_EQ(result, RESULT_ERROR);
+}
+
+TEST_F(HangTest, Alignment)
+{
+    // Make sure that the decoder errors out instead of hanging when the
+    // alignment sequence is interrupted by silence.
+    auto result = Run("PYTHONPATH=. python3 unit_tests/hang.py align");
+    ASSERT_EQ(result, RESULT_ERROR);
+}
+
+TEST_F(HangTest, Write)
+{
+    // Make sure that the decoder errors out instead of hanging when a
+    // block is followed by silence.
+    auto result = Run("PYTHONPATH=. python3 unit_tests/hang.py write");
+    ASSERT_EQ(result, RESULT_ERROR);
 }
 
 }

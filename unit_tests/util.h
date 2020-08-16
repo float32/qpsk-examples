@@ -34,7 +34,7 @@ namespace qpsk::test::util
 {
 
 template <typename T>
-inline T Resample(T signal, double ratio)
+T Resample(T signal, double ratio)
 {
     if (ratio != 1.0)
     {
@@ -60,7 +60,7 @@ inline T Resample(T signal, double ratio)
 }
 
 template <typename T>
-inline T Scale(T signal, float level)
+T Scale(T signal, float level)
 {
     if (level != 1.f)
     {
@@ -74,7 +74,7 @@ inline T Scale(T signal, float level)
 }
 
 template <typename T>
-inline T AddOffset(T signal, float level)
+T AddOffset(T signal, float level)
 {
     if (level != 1.f)
     {
@@ -88,7 +88,7 @@ inline T AddOffset(T signal, float level)
 }
 
 template <typename T>
-inline T AddNoise(T signal, float noise_level)
+T AddNoise(T signal, float noise_level)
 {
     if (noise_level != 0.f)
     {
@@ -106,7 +106,7 @@ inline T AddNoise(T signal, float noise_level)
 }
 
 template <typename T>
-inline T LoadAudio(std::string file_path)
+T LoadAudio(std::string file_path)
 {
     std::ifstream wav_file;
     wav_file.open(file_path, std::ios::in | std::ios::binary);
@@ -128,26 +128,16 @@ inline T LoadAudio(std::string file_path)
 }
 
 template <typename T>
-inline T LoadAudio(std::string bin_file_path,
-    int symbol_rate, int packet_size, int block_size,
-    float write_time = 0.05f)
+T LoadAudioFromCommand(std::string command)
 {
+    auto wav_file = popen(command.c_str(), "r");
     T signal;
-    std::stringstream ss;
-    ss << "python3 encoder.py -s 48000 -t bin -o -"
-        << " -i " << bin_file_path
-        << " -y " << symbol_rate
-        << " -p " << packet_size
-        << " -b " << block_size
-        << " -w " << (write_time / 2 * 1000)
-        << " -f " << block_size << ":" << (write_time / 2 * 1000)
-        << " -a 0";
-    std::string cmd = ss.str();
-    auto wav_file = popen(cmd.c_str(), "r");
+
     for (uint32_t i = 0; i < 44; i++)
     {
         fgetc(wav_file);
     }
+
     for (;;)
     {
         int16_t sample = (fgetc(wav_file) & 0xFF);
@@ -158,8 +148,28 @@ inline T LoadAudio(std::string bin_file_path,
         }
         signal.push_back(sample / 32767.f);
     }
+
     pclose(wav_file);
     return signal;
+}
+
+template <typename T>
+T LoadAudio(std::string bin_file_path,
+    int symbol_rate, int packet_size, int block_size,
+    float write_time = 0.05f)
+{
+    std::stringstream ss;
+    ss << "python3 encoder.py -s 48000 -t bin -o -"
+        << " -i " << bin_file_path
+        << " -y " << symbol_rate
+        << " -p " << packet_size
+        << " -b " << block_size
+        << " -w " << (write_time / 2 * 1000)
+        << " -f " << block_size << ":" << (write_time / 2 * 1000)
+        << " -a 0";
+    std::string cmd = ss.str();
+
+    return LoadAudioFromCommand<T>(cmd);
 }
 
 inline std::vector<uint8_t> LoadBinary(std::string file_path)
