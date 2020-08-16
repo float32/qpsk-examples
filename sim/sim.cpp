@@ -32,9 +32,9 @@ int main(int argc, char* argv[])
 {
     assert(argc > 2);
     auto vcd_file = std::string(argv[1]);
-    auto bin_file = std::string(argv[2]);
+    auto input_file = std::string(argv[2]);
     auto decode_file = std::string(argc > 3 ? argv[3] : "");
-    SimQPSK(vcd_file, bin_file, decode_file);
+    Simulate(vcd_file, input_file, decode_file);
 }
 
 }

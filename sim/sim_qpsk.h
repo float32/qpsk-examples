@@ -50,22 +50,10 @@ constexpr float kFlashWriteTime = 0.025f;
 
 using Signal = std::vector<float>;
 
-inline void SimQPSK(std::string vcd_file, std::string bin_file,
-    std::string decode_file = "")
+template <typename T>
+Result RunSim(std::string vcd_file, T& decoded_data,
+    Signal signal, double timestep)
 {
-    auto expected_data = test::util::LoadBinary(bin_file);
-    decltype(expected_data) decoded_data;
-
-    auto signal = test::util::LoadAudio<Signal>(bin_file,
-        kSymbolRate, kPacketSize, kBlockSize, kFlashWriteTime * 2);
-
-    // Resample, attenuate, and add noise
-    static constexpr float kResamplingRatio = 1.02f;
-    signal = test::util::Resample(signal, kResamplingRatio);
-    signal = test::util::Scale(signal, 0.1f);
-    signal = test::util::AddNoise(signal, 0.025f);
-    signal = test::util::AddOffset(signal, 0.25f);
-
     VCDWriter vcd{vcd_file,
         makeVCDHeader(TimeScale::ONE, TimeScaleUnit::us, utils::now())};
     VCDIntegerVar<1> v_time_extend(vcd, "top", "time_extend");
@@ -100,7 +88,6 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     qpsk.Init(kCRCSeed);
 
     double time = 0;
-    double timestep = 1.0e6 / (kSampleRate * kResamplingRatio);
     int flash_write_delay = 0;
 
     // Begin decoding
@@ -162,23 +149,50 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     }
 
     v_time_extend.change(time, 0);
-
     vcd.flush();
+
+    return result;
+}
+
+template <typename T>
+void DumpToFile(std::string file_path, T& container)
+{
+    if (file_path != "")
+    {
+        std::ofstream out;
+        out.open(file_path, std::ios::out | std::ios::binary);
+        assert(out.good());
+        auto data = reinterpret_cast<char*>(container.data());
+        out.write(data, container.size());
+        out.close();
+    }
+}
+
+inline void EncodeAndSimulate(std::string vcd_file, std::string bin_file,
+    std::string decode_file = "")
+{
+    auto expected_data = test::util::LoadBinary(bin_file);
+    decltype(expected_data) decoded_data;
+
+    auto signal = test::util::LoadAudio<Signal>(bin_file,
+        kSymbolRate, kPacketSize, kBlockSize, kFlashWriteTime * 2);
+
+    // Resample, attenuate, and add noise
+    static constexpr float kResamplingRatio = 1.02f;
+    signal = test::util::Resample(signal, kResamplingRatio);
+    signal = test::util::Scale(signal, 0.1f);
+    signal = test::util::AddNoise(signal, 0.025f);
+    signal = test::util::AddOffset(signal, 0.25f);
+
+    double timestep = 1.0e6 / (kSampleRate * kResamplingRatio);
+    auto result = RunSim(vcd_file, decoded_data, signal, timestep);
 
     if (decoded_data.size() > expected_data.size())
     {
         expected_data.resize(decoded_data.size(), kFillByte);
     }
 
-    if (decode_file != "")
-    {
-        std::ofstream out;
-        out.open(decode_file, std::ios::out | std::ios::binary);
-        assert(out.good());
-        auto data = reinterpret_cast<char*>(decoded_data.data());
-        out.write(data, decoded_data.size());
-        out.close();
-    }
+    DumpToFile(decode_file, decoded_data);
 
     if (result != RESULT_END)
     {
@@ -191,6 +205,25 @@ inline void SimQPSK(std::string vcd_file, std::string bin_file,
     else
     {
         throw std::runtime_error("Decoded incorrect data");
+    }
+}
+
+inline void Simulate(std::string vcd_file, std::string input_file,
+    std::string decode_file = "")
+{
+    if (input_file.substr(input_file.length() - 4, 4) == ".wav")
+    {
+        std::cout << "Simulating directly with wav audio." << std::endl;
+        auto signal = test::util::LoadAudio<Signal>(input_file);
+        double timestep = 1.0e6 / kSampleRate;
+        std::vector<uint8_t> decoded_data;
+        auto result = RunSim(vcd_file, decoded_data, signal, timestep);
+
+        DumpToFile(decode_file, decoded_data);
+    }
+    else
+    {
+        EncodeAndSimulate(vcd_file, input_file, decode_file);
     }
 }
 
