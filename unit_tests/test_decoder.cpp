@@ -108,24 +108,7 @@ public:
                std::lround(1000 * qpsk_.decision_phase()),
                std::lround(1000 * qpsk_.signal_power()));
 
-        if (error == ERROR_SYNC)
-        {
-            printf("  Recent symbols   :");
-            uint8_t symbol;
-
-            while (qpsk_.symbols_available() > 16)
-            {
-                qpsk_.PopSymbol(symbol);
-            }
-
-            while (qpsk_.PopSymbol(symbol))
-            {
-                printf(" %u", symbol);
-            }
-
-            printf("\n");
-        }
-        else if (error == ERROR_CRC)
+        if (error == ERROR_CRC)
         {
             printf("  Packet data      :\n");
 
