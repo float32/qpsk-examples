@@ -22,6 +22,8 @@
 
 #include <cstdint>
 #include <type_traits>
+#include <thread>
+#include <chrono>
 #include <gtest/gtest.h>
 #include "inc/fifo.h"
 
@@ -125,6 +127,71 @@ TYPED_TEST(FifoTest, PushPeekPop)
     }
 
     EXPECT_TRUE(this->fifo_.empty());
+}
+
+template <typename T>
+class FifoThreadTest : public FifoTest<T>
+{
+protected:
+    static constexpr uint32_t kTestLength = 100000;
+    std::thread producer_;
+
+    void TearDown() override
+    {
+        producer_.join();
+    }
+};
+
+TYPED_TEST_CASE(FifoThreadTest, FifoSizes);
+
+TYPED_TEST(FifoThreadTest, ThreadSafeProducerBound)
+{
+    using namespace std::literals::chrono_literals;
+
+    this->producer_ = std::thread([&](void)
+    {
+        std::this_thread::sleep_for(10ms);
+
+        for (uint32_t i = 0; i < this->kTestLength; i++)
+        {
+            while (this->fifo_.Push(i) == false);
+            std::this_thread::yield();
+        }
+    });
+
+    for (uint32_t i = 0; i < this->kTestLength; i++)
+    {
+        uint32_t item;
+        while (this->fifo_.Pop(item) == false);
+        ASSERT_EQ(item, i);
+    }
+
+    ASSERT_TRUE(this->fifo_.empty());
+}
+
+TYPED_TEST(FifoThreadTest, ThreadSafeConsumerBound)
+{
+    using namespace std::literals::chrono_literals;
+
+    this->producer_ = std::thread([&](void)
+    {
+        for (uint32_t i = 0; i < this->kTestLength; i++)
+        {
+            while (this->fifo_.Push(i) == false);
+        }
+    });
+
+    std::this_thread::sleep_for(10ms);
+
+    for (uint32_t i = 0; i < this->kTestLength; i++)
+    {
+        uint32_t item;
+        while (this->fifo_.Pop(item) == false);
+        ASSERT_EQ(item, i);
+        std::this_thread::yield();
+    }
+
+    ASSERT_TRUE(this->fifo_.empty());
 }
 
 template <typename T>
