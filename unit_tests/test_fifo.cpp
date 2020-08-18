@@ -69,10 +69,21 @@ TYPED_TEST(FifoTest, FullPush)
 {
     for (uint32_t i = 0; i < this->kSize; i++)
     {
+        ASSERT_FALSE(this->fifo_.full());
         ASSERT_TRUE(this->fifo_.Push(kPaint));
     }
 
+    EXPECT_TRUE(this->fifo_.full());
     EXPECT_FALSE(this->fifo_.Push(kPaint));
+
+    for (uint32_t i = 0; i < this->kSize; i++)
+    {
+        this->fifo_.Pop();
+        ASSERT_FALSE(this->fifo_.full());
+        ASSERT_TRUE(this->fifo_.Push(kPaint));
+        ASSERT_TRUE(this->fifo_.full());
+        ASSERT_FALSE(this->fifo_.Push(kPaint));
+    }
 }
 
 TYPED_TEST(FifoTest, FillAndFlush)
@@ -117,16 +128,10 @@ TYPED_TEST(FifoTest, PushPeekPop)
 }
 
 template <typename T>
-class RingBufferTest : public ::testing::Test
+class RingBufferTest : public FifoTest<T>
 {
 protected:
-    static constexpr uint32_t kSize = T::value;
-    RingBuffer<uint32_t, kSize> fifo_;
-
-    void SetUp() override
-    {
-        fifo_.Init();
-    }
+    RingBuffer<uint32_t, FifoTest<T>::kSize> fifo_;
 };
 
 TYPED_TEST_CASE(RingBufferTest, FifoSizes);
@@ -147,8 +152,15 @@ TYPED_TEST(RingBufferTest, EmptyPeekPop)
 
 TYPED_TEST(RingBufferTest, FullPush)
 {
+    for (uint32_t i = 0; i < this->kSize; i++)
+    {
+        ASSERT_FALSE(this->fifo_.full());
+        ASSERT_TRUE(this->fifo_.Push(kPaint));
+    }
+
     for (uint32_t i = 0; i < this->kSize * 10; i++)
     {
+        ASSERT_TRUE(this->fifo_.full());
         ASSERT_TRUE(this->fifo_.Push(kPaint));
     }
 }
