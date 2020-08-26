@@ -14,6 +14,7 @@ constexpr uint32_t kGreenLEDPin  = GPIO_PIN_12;
 constexpr uint32_t kOrangeLEDPin = GPIO_PIN_13;
 constexpr uint32_t kBlueLEDPin   = GPIO_PIN_15;
 constexpr uint32_t kProfilingPin = GPIO_PIN_11;
+constexpr uint32_t kADCInterruptPin = GPIO_PIN_9;
 constexpr uint32_t kSwitchPin    = GPIO_PIN_0;
 
 static_assert(SAMPLE_RATE % SYMBOL_RATE == 0);
@@ -46,10 +47,11 @@ void SysTick_Handler(void)
 
 void ADC_IRQHandler(void)
 {
+    LL_GPIO_SetOutputPin(GPIOD, kADCInterruptPin);
     int16_t data = LL_ADC_REG_ReadConversionData12(ADC1);
     float sample = (data - 0x800) / 2048.f;
     decoder.Push(sample);
-    LL_GPIO_SetOutputPin(GPIOD, kProfilingPin);
+    LL_GPIO_ResetOutputPin(GPIOD, kADCInterruptPin);
 }
 
 void InitOutputPins(void)
@@ -57,7 +59,7 @@ void InitOutputPins(void)
     __HAL_RCC_GPIOD_CLK_ENABLE();
 
     auto pins = kRedLEDPin | kGreenLEDPin | kOrangeLEDPin | kBlueLEDPin |
-        kProfilingPin;
+        kProfilingPin | kADCInterruptPin;
 
     GPIO_InitTypeDef gpio_init =
     {
@@ -136,7 +138,7 @@ void InitTimer(void)
     {
         .Prescaler         = 0,
         .CounterMode       = LL_TIM_COUNTERMODE_DOWN,
-        .Autoreload        = HAL_RCC_GetPCLK1Freq() * 2 / 48000 - 1,
+        .Autoreload        = HAL_RCC_GetPCLK1Freq() * 2 / kSampleRate - 1,
         .ClockDivision     = LL_TIM_CLOCKDIVISION_DIV1,
         .RepetitionCounter = 0,
     };
@@ -177,7 +179,6 @@ void InitADC(void)
     LL_ADC_REG_InitTypeDef adc_reg_init =
     {
         .TriggerSource    = LL_ADC_REG_TRIG_EXT_TIM2_TRGO,
-        // .TriggerSource    = LL_ADC_REG_TRIG_SOFTWARE,
         .SequencerLength  = LL_ADC_REG_SEQ_SCAN_DISABLE,
         .SequencerDiscont = LL_ADC_REG_SEQ_DISCONT_DISABLE,
         .ContinuousMode   = LL_ADC_REG_CONV_SINGLE,
@@ -297,6 +298,7 @@ int main(void)
 
     for (;;)
     {
+        LL_GPIO_SetOutputPin(GPIOD, kProfilingPin);
         auto result = decoder.Process();
         LL_GPIO_ResetOutputPin(GPIOD, kProfilingPin);
 
