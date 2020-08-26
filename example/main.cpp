@@ -298,6 +298,8 @@ int main(void)
 
     for (;;)
     {
+        while (!decoder.samples_available());
+
         LL_GPIO_SetOutputPin(GPIOD, kProfilingPin);
         auto result = decoder.Process();
         LL_GPIO_ResetOutputPin(GPIOD, kProfilingPin);
