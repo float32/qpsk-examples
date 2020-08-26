@@ -102,14 +102,19 @@ void InitPowerAndClock(void)
         .HSIState            = RCC_HSI_OFF,
         .HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT,
         .LSIState            = RCC_LSI_OFF,
+
+        // Assuming HSE is 8MHz,
+        // VCO clock is HSE * N/M = 8 MHz * 96/4 = 192 MHz
+        // System clock is VCO / P = 192 MHz / 6 = 32 MHz
+        // USB clock is VCO / Q = 192 MHz / 4 = 48 MHz
         .PLL =
         {
             .PLLState  = RCC_PLL_ON,
             .PLLSource = RCC_PLLSOURCE_HSE,
             .PLLM      = 4,
-            .PLLN      = 168,
-            .PLLP      = RCC_PLLP_DIV2,
-            .PLLQ      = 7,
+            .PLLN      = 96,
+            .PLLP      = RCC_PLLP_DIV6,
+            .PLLQ      = 4,
         },
     };
 
