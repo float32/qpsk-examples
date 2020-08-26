@@ -24,6 +24,8 @@
 #include <type_traits>
 #include <thread>
 #include <chrono>
+#include <random>
+#include <algorithm>
 #include <gtest/gtest.h>
 #include "inc/fifo.h"
 
@@ -127,6 +129,40 @@ TYPED_TEST(FifoTest, PushPeekPop)
     }
 
     EXPECT_TRUE(this->fifo_.empty());
+}
+
+TEST(FifoTest, PushBuffer)
+{
+    constexpr uint32_t kSize = 1024;
+    Fifo<uint32_t, kSize> fifo;
+    fifo.Init();
+    uint32_t buffer[16];
+    std::minstd_rand rng;
+    std::uniform_int_distribution<uint32_t> dist(1, 16);
+
+    for (uint32_t i = 0; i < kSize; )
+    {
+        uint32_t buffer_length = std::min(dist(rng), kSize - i);
+
+        for (uint32_t j = 0; j < buffer_length; j++)
+        {
+            buffer[j] = i++;
+        }
+
+        ASSERT_TRUE(fifo.Push(buffer, buffer_length));
+    }
+
+    EXPECT_TRUE(fifo.full());
+    ASSERT_EQ(fifo.available(), kSize);
+
+    for (uint32_t i = 0; i < kSize; i++)
+    {
+        uint32_t item;
+        ASSERT_TRUE(fifo.Pop(item));
+        ASSERT_EQ(item, i);
+    }
+
+    ASSERT_TRUE(fifo.empty());
 }
 
 template <typename T>
