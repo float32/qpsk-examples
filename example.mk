@@ -103,6 +103,23 @@ wav: example/data.bin | $(TARGET_DIR)
 
 TGT_POSTCLEAN := $(RM) $(WAV_FILE)
 
+define TGT_POSTMAKE
+@echo 'BINARY SIZE:' \
+	$$(arm-none-eabi-size $(TARGET_DIR)/$(TARGET) | tail -n1 | \
+	awk '{ printf "0x%05X %d", $$1+$$2, $$1+$$2 }')
+@echo 'RAM USAGE:  ' \
+	$$(arm-none-eabi-size $(TARGET_DIR)/$(TARGET) | tail -n1 | \
+	awk '{ printf "0x%05X %d", $$2+$$3, $$2+$$3 }')
+endef
+
+.PHONY: example-sym
+example-sym: $(TARGET_DIR)/$(TARGET)
+	arm-none-eabi-nm -CnS $< | less
+
+.PHONY: example-top
+example-top: $(TARGET_DIR)/$(TARGET)
+	arm-none-eabi-nm -CrS --size-sort $< | less
+
 .PHONY: verify
 verify:
 	$(OPENOCD_CMD) -c init \
