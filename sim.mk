@@ -27,7 +27,7 @@ SOURCES := \
 
 TGT_DEFS :=
 CPPFLAGS := -g -O3 -iquote .
-TGT_CXXFLAGS := $(CPPFLAGS) -std=gnu++17
+TGT_CXXFLAGS := $(CPPFLAGS) -std=c++17
 
 VCD_FILE := $(TARGET_DIR)/sim-qpsk.vcd
 

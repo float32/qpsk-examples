@@ -71,8 +71,8 @@ OPTFLAGS := \
 	-finline-functions \
 
 TGT_INCDIRS  := . example example/hal
-TGT_CFLAGS   := -Os -g $(ARCHFLAGS) $(OPTFLAGS) $(WARNFLAGS) -std=gnu18
-TGT_CXXFLAGS := -Os -g $(ARCHFLAGS) $(OPTFLAGS) $(WARNFLAGS) -std=gnu++17 \
+TGT_CFLAGS   := -Os -g $(ARCHFLAGS) $(OPTFLAGS) $(WARNFLAGS) -std=c11
+TGT_CXXFLAGS := -Os -g $(ARCHFLAGS) $(OPTFLAGS) $(WARNFLAGS) -std=c++17 \
 	-fno-exceptions -fno-rtti -Wno-register
 TGT_LDLIBS   := -lm -lc -lgcc
 TGT_LDFLAGS  := $(ARCHFLAGS) \
