@@ -199,7 +199,7 @@ public:
                 }
                 else if (result == RESULT_BLOCK_COMPLETE)
                 {
-                    uint32_t* block = qpsk_.block_data();
+                    const uint32_t* block = qpsk_.block_data();
                     for (uint32_t i = 0; i < kBlockSize / 4; i++)
                     {
                         data.push_back(block[i] >>  0);
