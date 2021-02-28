@@ -70,9 +70,13 @@ void SysTick_Handler(void)
 void ADC_IRQHandler(void)
 {
     LL_GPIO_SetOutputPin(GPIOD, kADCInterruptPin);
+
+    // Get the sample from the ADC, convert to float, and pass it to the
+    // decoder.
     int16_t data = LL_ADC_REG_ReadConversionData12(ADC1);
     float sample = (data - 0x800) / 2048.f;
     decoder.Push(sample);
+
     LL_GPIO_ResetOutputPin(GPIOD, kADCInterruptPin);
 }
 
@@ -325,6 +329,8 @@ int main(void)
 
     for (;;)
     {
+        // We actually don't need to wait here for samples to be available.
+        // We only do so to make the profiling signal more informative.
         while (!decoder.samples_available());
 
         LL_GPIO_SetOutputPin(GPIOD, kProfilingPin);
