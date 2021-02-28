@@ -96,7 +96,8 @@ WAV_FILE := $(TARGET_DIR)/data.wav
 
 .PHONY: wav
 wav: example/data.bin | $(TARGET_DIR)
-	python3 encoder.py -s $(SAMPLE_RATE) -y $(SYMBOL_RATE) -b $(BLOCK_SIZE) \
+	python3 qpsk/encoder.py \
+		-s $(SAMPLE_RATE) -y $(SYMBOL_RATE) -b $(BLOCK_SIZE) \
 		-w 410 -f 16K:500:4 64K:1100:1 128K:2000:7 -x 0x08000000 \
 		-a +$(BOOTLOADER_SIZE) -p $(PACKET_SIZE) -e $(CRC_SEED) \
 		-i $< -o $(WAV_FILE)

@@ -33,7 +33,7 @@
 #include "sim/vcd-writer/vcd_writer.h"
 #include "sim/vcd_var.h"
 #include "unit_tests/util.h"
-#include "decoder.h"
+#include "qpsk/decoder.h"
 
 namespace qpsk::sim
 {

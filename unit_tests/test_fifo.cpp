@@ -27,7 +27,7 @@
 #include <random>
 #include <algorithm>
 #include <gtest/gtest.h>
-#include "inc/fifo.h"
+#include "qpsk/inc/fifo.h"
 
 namespace qpsk::test::fifo
 {

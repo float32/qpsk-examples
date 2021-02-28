@@ -22,7 +22,7 @@
 
 #include <gtest/gtest.h>
 #include <cmath>
-#include "inc/pll.h"
+#include "qpsk/inc/pll.h"
 
 namespace qpsk::test::pll
 {

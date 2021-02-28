@@ -22,7 +22,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-from encoder import Encoder, QPSKModulator
+from qpsk.encoder import Encoder, QPSKModulator
 import wave
 import argparse
 import sys

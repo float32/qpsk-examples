@@ -32,7 +32,7 @@ import io
 import codecs
 import itertools
 
-import encoder
+import qpsk.encoder as encoder
 
 
 
@@ -49,7 +49,7 @@ class TestQPSKEncoder(unittest.TestCase):
         hex_data = io.StringIO()
         ihex.write_hex_file(hex_data, write_start_addr=False)
         cls._hex_data = codecs.encode(hex_data.getvalue(), encoding='ascii')
-        cls._args = ['python3', 'encoder.py',
+        cls._args = ['python3', 'qpsk/encoder.py',
             '-s', '48000',
             '-y', '6000',
             '-b', '1K',

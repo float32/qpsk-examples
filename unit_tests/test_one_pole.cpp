@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <cmath>
 #include <gtest/gtest.h>
-#include "inc/one_pole.h"
+#include "qpsk/inc/one_pole.h"
 
 namespace qpsk::test::one_pole
 {

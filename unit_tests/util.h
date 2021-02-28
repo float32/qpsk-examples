@@ -159,7 +159,7 @@ T LoadAudio(std::string bin_file_path,
     float write_time = 0.05f)
 {
     std::stringstream ss;
-    ss << "python3 encoder.py -s 48000 -t bin -o -"
+    ss << "python3 qpsk/encoder.py -s 48000 -t bin -o -"
         << " -i " << bin_file_path
         << " -y " << symbol_rate
         << " -p " << packet_size

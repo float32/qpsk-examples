@@ -27,7 +27,7 @@
 #include "stm32f4xx_ll_tim.h"
 #include "stm32f4xx_ll_gpio.h"
 #include "stm32f4xx_ll_adc.h"
-#include "decoder.h"
+#include "qpsk/decoder.h"
 
 constexpr uint32_t kAppStartAddress = FLASH_BASE + BOOTLOADER_SIZE;
 

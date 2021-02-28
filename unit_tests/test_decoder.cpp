@@ -27,7 +27,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <gtest/gtest.h>
-#include "decoder.h"
+#include "qpsk/decoder.h"
 #include "unit_tests/util.h"
 
 namespace qpsk::test::decoder

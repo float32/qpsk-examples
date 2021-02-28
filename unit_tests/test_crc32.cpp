@@ -24,7 +24,7 @@
 #include <random>
 #include <gtest/gtest.h>
 #include <zlib.h>
-#include "inc/crc32.h"
+#include "qpsk/inc/crc32.h"
 
 namespace qpsk::test::crc32
 {

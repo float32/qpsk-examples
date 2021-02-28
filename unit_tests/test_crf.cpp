@@ -24,7 +24,7 @@
 #include <cmath>
 #include <vector>
 #include <gtest/gtest.h>
-#include "inc/carrier_rejection_filter.h"
+#include "qpsk/inc/carrier_rejection_filter.h"
 
 namespace qpsk::test::crf
 {

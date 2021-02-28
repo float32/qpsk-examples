@@ -25,7 +25,7 @@
 #include <vector>
 #include <random>
 #include <gtest/gtest.h>
-#include "inc/error_correction.h"
+#include "qpsk/inc/error_correction.h"
 #include "test_error_correction.h"
 
 namespace qpsk::test::error_correction

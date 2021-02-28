@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <type_traits>
 #include <gtest/gtest.h>
-#include "inc/delay_line.h"
+#include "qpsk/inc/delay_line.h"
 
 namespace qpsk::test::delay_line
 {

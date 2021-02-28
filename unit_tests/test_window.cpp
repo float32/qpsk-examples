@@ -23,7 +23,7 @@
 #include <gtest/gtest.h>
 #include <cmath>
 #include <random>
-#include "inc/window.h"
+#include "qpsk/inc/window.h"
 
 namespace qpsk::test::window
 {

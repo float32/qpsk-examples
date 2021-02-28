@@ -23,7 +23,7 @@
 #include <cstdint>
 #include <cmath>
 #include <gtest/gtest.h>
-#include "inc/util.h"
+#include "qpsk/inc/util.h"
 
 namespace qpsk::test::util
 {

@@ -26,7 +26,7 @@
 #include <vector>
 #include <gtest/gtest.h>
 #include <zlib.h>
-#include "inc/packet.h"
+#include "qpsk/inc/packet.h"
 #include "test_error_correction.h"
 
 namespace qpsk::test::packet
