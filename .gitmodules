@@ -1,0 +1,3 @@
+[submodule "qpsk"]
+	path = qpsk
+	url = https://github.com/float32/qpsk.git
