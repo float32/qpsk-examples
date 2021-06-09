@@ -174,11 +174,25 @@ public:
     void Decode(float resampling_ratio, float signal_level, float noise_level)
     {
         Signal signal = test_audio_;
-        // Resample, attenuate, and add noise
         signal = util::Resample(signal, resampling_ratio);
         signal = util::Scale(signal, signal_level);
         signal = util::AddNoise(signal, noise_level);
+        Decode(signal);
+    }
 
+    void Decode(float resampling_ratio, float signal_level, float noise_level,
+        float clip_low, float clip_high)
+    {
+        Signal signal = test_audio_;
+        signal = util::Resample(signal, resampling_ratio);
+        signal = util::Clamp(signal, clip_low, clip_high);
+        signal = util::Scale(signal, signal_level);
+        signal = util::AddNoise(signal, noise_level);
+        Decode(signal);
+    }
+
+    void Decode(Signal signal)
+    {
         int flash_write_delay = 0;
 
         // Begin decoding
@@ -250,6 +264,21 @@ TYPED_TEST(DecoderTest, Upsampled)
 TYPED_TEST(DecoderTest, Downsampled)
 {
     this->Decode(0.95f, 1.f, 0.f);
+}
+
+TYPED_TEST(DecoderTest, ClippedPositive)
+{
+    this->Decode(1.f, 1.f, 0.f, 0.f, 1.f);
+}
+
+TYPED_TEST(DecoderTest, ClippedNegative)
+{
+    this->Decode(1.f, 1.f, 0.f, -1.f, 0.f);
+}
+
+TYPED_TEST(DecoderTest, ClippedHalf)
+{
+    this->Decode(1.f, 1.f, 0.f, -0.5f, 0.5f);
 }
 
 TYPED_TEST(DecoderTest, Imperfect)

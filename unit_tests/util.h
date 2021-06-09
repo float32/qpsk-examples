@@ -29,6 +29,7 @@
 #include <cassert>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 namespace qpsk::test::util
 {
@@ -100,6 +101,17 @@ T AddNoise(T signal, float noise_level)
             sample += noise_level * dist(rng);
             sample = (sample > 1) ? 1 : (sample < -1) ? -1 : sample;
         }
+    }
+
+    return signal;
+}
+
+template <typename T>
+T Clamp(T signal, float low, float high)
+{
+    for (auto& sample : signal)
+    {
+        sample = std::clamp(sample, low, high);
     }
 
     return signal;
