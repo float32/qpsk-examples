@@ -2,8 +2,8 @@
 [*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
 [*] Wed Apr 25 23:31:56 2018
 [*]
-[dumpfile] "~/repos/qpsk/build/artifact/sim-qpsk.vcd"
-[savefile] "~/repos/qpsk/sim/sim-qpsk.gtkw"
+[dumpfile] "../build/artifact/sim-qpsk.vcd"
+[savefile] "../sim/sim-qpsk.gtkw"
 [size] 2155 943
 [pos] -1 -1
 *-18.716669 0 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
@@ -15,7 +15,7 @@
 [sst_expanded] 1
 [sst_vpaned_height] 275
 @2420
-^1 ~/repos/qpsk/sim/demodulator-state.txt
+^1 ../sim/demodulator-state.txt
 top.q.\dm.state
 @40008420
 [fpshift_count] 16
@@ -71,7 +71,7 @@ top.q.dm.\corr.out
 @20000
 -
 @2420
-^2 ~/repos/qpsk/sim/decoder-state.txt
+^2 ../sim/decoder-state.txt
 top.\q.state
 @22
 top.q.\pkt.byte
