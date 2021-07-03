@@ -192,7 +192,7 @@ TYPED_TEST(PacketTest, BlockFill)
         uint32_t word = this->block_.data()[i];
 
         #if __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-            word __builtin_bswap32(word);
+            word = __builtin_bswap32(word);
         #endif
 
         ASSERT_EQ(bytes[i * 4 + 0], (word >>  0) & 0xFF);
