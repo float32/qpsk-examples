@@ -71,10 +71,9 @@ TEST_P(ErrorCorrectionTest, DecodeNoError)
 
 TEST_P(ErrorCorrectionTest, DecodeWithDataError)
 {
-    auto bad_data = expected_;
-
-    for (uint32_t i = 0; i < bad_data.size() * 8; i++)
+    for (uint32_t i = 0; i < expected_.size() * 8; i++)
     {
+        auto bad_data = expected_;
         bad_data[i / 8] ^= 1 << (i % 8);
 
         ASSERT_NE(expected_, bad_data);
