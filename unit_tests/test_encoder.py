@@ -156,21 +156,23 @@ class TestPages(unittest.TestCase):
 
     def test_page_data(self):
         data = bytes([random.randint(0, 0xFF) for i in range(10000)])
-        for size in [1, 4, 10, 16, 100, 256, 1000, 4096]:
+        block_size = 4
+        for size in [4, 12, 16, 100, 256, 1000, 4096]:
             with self.subTest(page_size=size):
                 flash_spec = ['{}:10'.format(size)]
-                pages = encoder.Pages(data, flash_spec, 0)
+                pages = encoder.Pages(data, flash_spec, 0, block_size)
                 pages = b''.join((page for (time, page) in pages))
                 # The page data should contain exactly the input data
                 self.assertEqual(data, pages)
 
     def test_page_layout(self):
         data = bytes([random.randint(0, 0xFF) for i in range(10000)])
-        sizes = [10, 16, 100, 256, 1000]
+        sizes = [12, 16, 100, 256, 1000]
+        block_size = 4
         for (size_a, size_b, size_c) in itertools.permutations(sizes, 3):
             spec = '{}:10:1 {}:20:2 {}:30'.format(size_a, size_b, size_c)
             with self.subTest(flash_spec=spec):
-                pages = list(encoder.Pages(data, spec.split(), 0))
+                pages = list(encoder.Pages(data, spec.split(), 0, block_size))
                 addr = 0
                 self.assertEqual(pages[0], (10, data[addr : addr + size_a]))
                 addr += size_a
