@@ -61,6 +61,9 @@ Result RunSim(std::string vcd_file, T& decoded_data,
     // Decoder vars
     VCDIntegerVar<4> v_q_state(vcd, "top", "q.state");
     VCDFixedPointVar<4, 16> v_q_in(vcd, "top", "q.in");
+    VCDIntegerVar<32> v_q_size(vcd, "top", "q.size");
+    VCDIntegerVar<32> v_q_received(vcd, "top", "q.received");
+    VCDFixedPointVar<2, 16> v_q_progress(vcd, "top", "q.progress");
 
     // Packet vars
     VCDIntegerVar<8> v_pkt_byte(vcd, "top.q", "pkt.byte");
@@ -109,7 +112,7 @@ Result RunSim(std::string vcd_file, T& decoded_data,
                 result == RESULT_BLOCK_COMPLETE ||
                 (result == RESULT_ERROR && qpsk.error() == ERROR_CRC))
             {
-                uint8_t* packet = qpsk.packet_data();
+                const uint8_t* packet = qpsk.packet_data();
                 for (uint32_t i = 0; i < kPacketSize; i++)
                 {
                     decoded_data.push_back(packet[i]);
@@ -128,6 +131,9 @@ Result RunSim(std::string vcd_file, T& decoded_data,
 
         v_q_in.change(time, sample);
         v_q_state.change(time, qpsk.state());
+        v_q_size.change(time, qpsk.total_size_bytes());
+        v_q_received.change(time, qpsk.bytes_received());
+        v_q_progress.change(time, qpsk.progress());
 
         v_pkt_byte.change(time, qpsk.packet_byte());
         v_dm_state.change(time, qpsk.demodulator_state());

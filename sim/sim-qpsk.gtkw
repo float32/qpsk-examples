@@ -1,16 +1,16 @@
 [*]
-[*] GTKWave Analyzer v3.3.86 (w)1999-2017 BSI
-[*] Wed Apr 25 23:31:56 2018
+[*] GTKWave Analyzer v3.3.104 (w)1999-2020 BSI
+[*] Tue Oct 24 00:30:47 2023
 [*]
 [dumpfile] "../build/artifact/sim-qpsk.vcd"
 [savefile] "../sim/sim-qpsk.gtkw"
 [size] 2155 943
 [pos] -1 -1
-*-18.716669 0 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-19.049109 0 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] top.
 [treeopen] top.q.
 [treeopen] top.q.dm.
-[sst_width] 211
+[sst_width] 233
 [signals_width] 228
 [sst_expanded] 1
 [sst_vpaned_height] 275
@@ -42,14 +42,14 @@ top.q.dm.\pll.error
 @20000
 -
 @40008420
-[fpshift_count] 16
 [color] 2
+[fpshift_count] 16
 top.q.dm.\crfi.out
 @20000
 -
 @40008420
-[fpshift_count] 16
 [color] 2
+[fpshift_count] 16
 top.q.dm.\crfq.out
 @20000
 -
@@ -60,8 +60,8 @@ top.q.dm.\pll.step
 -
 -
 @40000420
-[fpshift_count] 16
 [color] 6
+[fpshift_count] 16
 top.q.\dm.dec_ph
 @24
 top.q.\dm.symbol
@@ -82,5 +82,14 @@ top.q.\dm.decide
 top.q.\dm.early
 [color] 6
 top.q.\dm.late
+@420
+[color] 3
+top.\q.size
+[color] 3
+top.\q.received
+@40008421
+[color] 3
+[fpshift_count] 16
+top.\q.progress
 [pattern_trace] 1
 [pattern_trace] 0

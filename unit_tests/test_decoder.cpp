@@ -153,6 +153,10 @@ public:
             printf("Error : abort\n");
             break;
 
+        case ERROR_LENGTH:
+            printf("Error : length\n");
+            break;
+
         case ERROR_NONE:
             break;
         }

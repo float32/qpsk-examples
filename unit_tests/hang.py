@@ -26,6 +26,7 @@ from qpsk.encoder import Encoder, QPSKModulator
 import wave
 import argparse
 import sys
+import struct
 
 hang_states = [
     'sync',
@@ -62,8 +63,9 @@ elif args.hang_state == 'align':
         symbols += enc._encode_byte(byte)
 elif args.hang_state == 'write':
     symbols += enc._encode_intro()
+    meta = struct.pack('<L', 1024) + (b'\x00' * 252)
     data = bytes([n % 256 for n in range(1024)])
-    symbols += enc._encode_block(data)
+    symbols += enc._encode_block(meta + data)
 
 signal = mod.modulate(symbols)
 signal.extend([0] * sample_rate)
