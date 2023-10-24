@@ -1,0 +1,22 @@
+name: Release
+
+on: push
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+
+      - name: Install toolchain
+        run: |
+          sudo apt update
+          sudo apt install -y googletest libgtest-dev zlib1g-dev python3-intelhex
+
+      - name: Run unit tests
+        run: |
+          make -j$(nproc) check
+          make py-check
