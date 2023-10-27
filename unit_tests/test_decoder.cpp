@@ -199,6 +199,10 @@ public:
     {
         int flash_write_delay = 0;
 
+        ASSERT_EQ(qpsk_.bytes_received(), 0);
+        ASSERT_EQ(qpsk_.total_size_bytes(), 0);
+        ASSERT_FLOAT_EQ(qpsk_.progress(), 0.0);
+
         // Begin decoding
         Result result;
         std::vector<uint8_t> data;
@@ -226,6 +230,7 @@ public:
                         data.push_back(block[i] >> 24);
                     }
                     flash_write_delay = kSampleRate * kFlashWriteTime;
+                    ASSERT_EQ(data.size(), qpsk_.bytes_received());
                 }
             }
             else
@@ -235,6 +240,8 @@ public:
         }
 
         ASSERT_EQ(result, RESULT_END);
+        ASSERT_EQ(data.size(), qpsk_.total_size_bytes());
+        ASSERT_FLOAT_EQ(qpsk_.progress(), 1.0);
 
         // Compare the received data to the bin file
         ASSERT_GE(data.size(), test_data_.size());
